@@ -107,10 +107,10 @@ class Gnuplot(object):
             return None
 
         try:
-            # When echoing is turned off (self.gp_proc.setecho(False)), Gnuplot
-            # echoes the command. Since Gnuplot uses CRs to wrap lines, but the
-            # whole echoed command is terminated by a CRLF, we can just throw
-            # away everything up to the first CRLF.
+            # At least on Mac OS X, I get the command echoed back whether or
+            # not I have echoing turned on for the pty. And the echoed-back
+            # command is wrapped with CRs but terminated with a CRLF. So
+            # discard everything up to the first CRLF.
             self.gp_proc.expect_exact("\r\n")
             self.gp_proc.expect_exact(self.gp_prompt)
         except pexpect.EOF:

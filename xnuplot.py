@@ -9,9 +9,8 @@ import tempfile
 import threading
 import warnings
 
-class SpawnError(Exception): pass
-class Timeout(Exception): pass
-class CommunicationError(Exception): pass
+class SpawnError(RuntimeError): pass
+class CommunicationError(RuntimeError): pass
 
 class Gnuplot(object):
 
@@ -69,12 +68,14 @@ class Gnuplot(object):
     _placeholder_pattern = re.compile(r"\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}")
     _exitquit_pattern = re.compile(r"\s*(quit|exit)(\W|$)")
     def __call__(self, command, **kwargs):
+        if "\n" in command:
+            raise ValueError("command contains newlines, which are not allowed")
         placeholders = list(self._placeholder_pattern.finditer(command))
         names = [p.group(1) for p in placeholders]
         for name in names:
             if name not in kwargs:
-                raise ValueError(("content for file placeholder {{%s}} " +
-                    "not provided" % name))
+                raise KeyError(("content for file placeholder {{%s}} " +
+                    "not provided as keyword argument" % name))
         if len(names) > len(set(names)):
             raise ValueError("duplicate file placeholder name(s)")
 
@@ -127,7 +128,7 @@ class Gnuplot(object):
         return result
 
     def async(self, command, **kwargs):
-        raise UnimplementedError()
+        raise NotImplementedError()
 
     def interact(self):
         # Debug mode (echoing) is a mere annoyance when in interactive mode.

@@ -140,6 +140,8 @@ class Gnuplot(object):
             self.debug = save_debug
         with debug_turned_off():
             print >>sys.stderr, "escape character is `^]'"
+            # Send a black command so that the prompt is printed.
+            self.gp_proc.sendline("")
             self.gp_proc.interact()
 
         # The user could have quit Gnuplot.

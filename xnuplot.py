@@ -3,7 +3,9 @@ import formatter
 import os
 import pexpect
 import re
+import shlex
 import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -17,6 +19,7 @@ class Gnuplot(object):
     gp_prompt = "gnuplot> "
 
     def __init__(self, command="/usr/bin/env gnuplot", persist=True):
+        self._debug = False
         self.wk_dir = tempfile.mkdtemp(prefix="xnuplot.")
         if persist:
             command += " -persist"
@@ -87,8 +90,7 @@ class Gnuplot(object):
             name = placeholder.group(1)
             data = kwargs[name]
             pipe = OutboundNamedPipe(data, dir=self.wk_dir)
-            if (self.debug):
-                pipe.debug = True
+            pipe.debug = self.debug
             span_start, span_stop = placeholder.span(0)
             substituted_command += command[start_of_next_chunk:span_start]
             substituted_command += Gnuplot.quote(pipe.path)
@@ -215,9 +217,10 @@ class Gnuplot(object):
     timeout = property(get_timeout, set_timeout)
 
     def set_debug(self, debug=True):
+        self._debug = debug
         self.gp_proc.logfile_read = (sys.stderr if debug else None)
     def get_debug(self):
-        return self.gp_proc.logfile_read is not None
+        return self._debug
     debug = property(get_debug, set_debug)
 
     @staticmethod
@@ -249,6 +252,12 @@ class OutboundNamedPipe(threading.Thread):
             if self.debug:
                 print >>sys.stderr, "<< wrote %d bytes to pipe %s >>" % \
                         (len(self.data), self.path)
+            if self.debug >= 2:
+                dump = subprocess.Popen(shlex.split("od -A x -t x2"),
+                                        stdin=subprocess.PIPE,
+                                        stdout=sys.stderr,
+                                        stderr=sys.stderr)
+                dump.communicate(input=self.data)
         finally:
             os.unlink(self.path)
             if self.made_dir:

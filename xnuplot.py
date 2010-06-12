@@ -11,14 +11,25 @@ import tempfile
 import threading
 import warnings
 
-class SpawnError(RuntimeError): pass
-class CommunicationError(RuntimeError): pass
+class SpawnError(RuntimeError):
+    """Raised upon failure to initiate communication with Gnuplot subprocess."""
+
+class CommunicationError(RuntimeError):
+    """Raised when communication with Gnuplot subprocess failed."""
 
 class Gnuplot(object):
+    """Manager for communication with a Gnuplot subprocess."""
 
     gp_prompt = "gnuplot> "
 
     def __init__(self, command="/usr/bin/env gnuplot", persist=True):
+        """Return a new Gnuplot object.
+
+        Keyword Arguments:
+        command - the command to use to invoke Gnuplot.
+        persist - whether the plot window should stay open after this object
+                  (and hence the Gnuplot subprocess) is destroyed.
+        """
         self._debug = False
         self.wk_dir = tempfile.mkdtemp(prefix="xnuplot.")
         if persist:
@@ -56,11 +67,14 @@ class Gnuplot(object):
         self.close()
 
     def close(self):
+        """Close the Gnuplot subprocess and remove all temporary files."""
         if self.gp_proc is not None and self.gp_proc.isalive():
-                self("quit")
-        self.terminate()
+            self("quit")
+        else:
+            self.terminate()
 
     def terminate(self):
+        """Force-quit the Gnuplot subprocess and remove all temporary files."""
         if self.gp_proc is not None:
             self.gp_proc.close(force=True)
             self.gp_proc = None
@@ -71,6 +85,27 @@ class Gnuplot(object):
     _placeholder_pattern = re.compile(r"\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}")
     _exitquit_pattern = re.compile(r"\s*(quit|exit)(\W|$)")
     def __call__(self, command, **kwargs):
+        """Send a command (or commands) to Gnuplot.
+
+        If `command' contains newlines, __call__(command) is equivalent to
+        script(command).
+
+        If `command' is a single line, it can contain file placeholders of the
+        form `{{foo}}'. These are substituted with temporary filenames for
+        automatically created named pipes for passing data to Gnuplot. The data
+        to pass must be given as a keyword argument with the same name (`foo'
+        in this example).
+
+        The user is responsible for ensuring that the format of the data is
+        correct for the command to be sent.
+
+        The return value is the tty output from Gnuplot (excluding the Gnuplot>
+        prompt). This is often the empty string for successful commands.
+
+        Example:
+        gp = Gnuplot()
+        gp("plot {{data}} notitle with linespoints", data="1 1\n2 2\n3 3")
+        """
         mode = ("script" if "\n" in command else "line")
         placeholders = list(self._placeholder_pattern.finditer(command))
         if mode == "script":
@@ -93,7 +128,7 @@ class Gnuplot(object):
         for placeholder in placeholders:
             name = placeholder.group(1)
             data = kwargs[name]
-            pipe = OutboundNamedPipe(data, dir=self.wk_dir)
+            pipe = _OutboundNamedPipe(data, dir=self.wk_dir)
             pipe.debug = self.debug
             span_start, span_stop = placeholder.span(0)
             substituted_command += command[start_of_next_chunk:span_start]
@@ -133,8 +168,13 @@ class Gnuplot(object):
         result = self.gp_proc.before
         return result
 
-    def script(self, command):
-        return [self(line) for line in command.split("\n")]
+    def script(self, script):
+        """Send a series of commands to Gnuplot.
+
+        `script' is split at newlines and sent, one by one, to Gnuplot.
+        A list of result strings is returned.
+        """
+        return [self(line) for line in script.split("\n")]
 
     def _plot(self, cmd, *items):
         # Common implementation for plot() and splot().
@@ -196,10 +236,12 @@ class Gnuplot(object):
         """
         self._plot("replot", *items)
 
-    def async(self, command, **kwargs):
-        raise NotImplementedError()
-
     def interact(self):
+        """Interact directly with the Gnuplot subprocess.
+
+        Handles control of the subprocess to the user.
+        The interactive session can be terminated by typing CTRL-].
+        """
         # Debug mode (echoing) is a mere annoyance when in interactive mode.
         @contextlib.contextmanager
         def debug_turned_off():
@@ -221,21 +263,26 @@ class Gnuplot(object):
         self.gp_proc.timeout = seconds
     def get_timeout(self):
         return self.gp_proc.timeout
-    timeout = property(get_timeout, set_timeout)
+    timeout = property(get_timeout, set_timeout,
+                       doc="Timeout (in seconds) for replies from Gnuplot.")
 
     def set_debug(self, debug=True):
         self._debug = debug
         self.gp_proc.logfile_read = (sys.stderr if debug else None)
     def get_debug(self):
         return self._debug
-    debug = property(get_debug, set_debug)
+    debug = property(get_debug, set_debug,
+                     doc="Echo communication with Gnuplot if true.")
 
     @staticmethod
     def quote(filename):
+        """Return a quoted string for use as part of a Gnuplot command."""
         quoted =  "'" + filename.replace("\\", "\\\\").replace("'", "\\'") + "'"
         return quoted
 
-class OutboundNamedPipe(threading.Thread):
+class _OutboundNamedPipe(threading.Thread):
+    # Asynchronous manager for named pipe for sending data.
+    # Once constructed, takes responsibility for cleanup after data is sent.
     def __init__(self, data, dir=None):
         self.data = data
         self.debug = False
@@ -246,7 +293,7 @@ class OutboundNamedPipe(threading.Thread):
             self.dir = tempfile.mkdtemp()
             self.made_dir = True
         self.path = tempfile.mktemp(prefix="fifo.", dir=self.dir)
-        super(OutboundNamedPipe, self).__init__(name=self.path)
+        super(_OutboundNamedPipe, self).__init__(name=self.path)
         # Make the named pipe synchronously, so that it's guaranteed to be
         # ready for immediate use by the reader.
         os.mkfifo(self.path)

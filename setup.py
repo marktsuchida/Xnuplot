@@ -4,6 +4,6 @@ setup(name='xnuplot',
         description='Pexpect-based adaptor for Gnuplot',
         author='Mark A. Tsuchida',
         author_email='mark@tsuchida.org',
-        py_modules=['xnuplot'],
+        py_modules=['xnuplot', 'numplot'],
         )
 

@@ -71,9 +71,13 @@ class Gnuplot(object):
     _placeholder_pattern = re.compile(r"\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}")
     _exitquit_pattern = re.compile(r"\s*(quit|exit)(\W|$)")
     def __call__(self, command, **kwargs):
-        if "\n" in command:
-            raise ValueError("command contains newlines, which are not allowed")
+        mode = ("script" if "\n" in command else "line")
         placeholders = list(self._placeholder_pattern.finditer(command))
+        if mode == "script":
+            if len(placeholders):
+                raise ValueError("multi-line command contains file " +
+                                 "placeholder(s) (not allowed)")
+            return self.script(command)
         names = [p.group(1) for p in placeholders]
         for name in names:
             if name not in kwargs:
@@ -128,6 +132,9 @@ class Gnuplot(object):
             raise CommunicationError("timeout")
         result = self.gp_proc.before
         return result
+
+    def script(self, command):
+        return [self(line) for line in command.split("\n")]
 
     def _plot(self, cmd, *items):
         # Common implementation for plot() and splot().

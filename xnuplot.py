@@ -127,6 +127,66 @@ class Gnuplot(object):
         result = self.gp_proc.before
         return result
 
+    def _plot(self, cmd, *items):
+        # Common implementation for plot() and splot().
+        item_strings = []
+        data_dict = {}
+        for i, item in enumerate(items):
+            if isinstance(item, basestring):
+                item_strings.append(item)
+            else:
+                if len(item) != 2 or not isinstance(item[1], basestring):
+                    raise ValueError("plot item must be a string or " +
+                                     "a (data, string) pair")
+                placeholder = "pipe%d" % i
+                item_strings.append("{{%s}} volatile %s" % (placeholder,
+                                                            item[1]))
+                data_dict[placeholder] = item[0]
+        self(cmd + " " + ", ".join(item_strings), **data_dict)
+
+    def plot(self, *items):
+        """Issue a `plot' command with the given items.
+
+        Each argument (in `items') may be either a string, or a pair
+        (data, string). In the latter case, `data' will be piped to Gnuplot
+        (appearing to Gnuplot as a datafile), and `string' should not contain
+        a function or filename.
+
+        See also: splot()
+
+        Example:
+        Gnuplot().plot("sin(x) notitle", "'some_file.dat' with lp",
+                       (some_data, "binary array=(512,512) with image"))
+        """
+        self._plot("plot", *items)
+
+    def splot(self, *items):
+        """Issue an `splot' command with the given items.
+
+        Each argument (in `items') may be either a string, or a pair
+        (data, string). In the latter case, `data' will be piped to Gnuplot
+        (appearing to Gnuplot as a datafile), and `string' should not contain
+        a function or filename.
+
+        See also: plot()
+        """
+        self._plot("splot", *items)
+
+    def replot(self, *items):
+        """Issue a `replot' command with the given items.
+
+        Each argument (in `items') may be either a string, or a pair
+        (data, string). In the latter case, `data' will be piped to Gnuplot
+        (appearing to Gnuplot as a datafile), and `string' should not contain
+        a function or filename.
+
+        Note that `replot' does not work when the previous plot was made by
+        passing data to Gnuplot.
+
+        See also: plot(), splot()
+        """
+        self._plot("replot", *items)
+
     def async(self, command, **kwargs):
         raise NotImplementedError()
 

@@ -1,7 +1,7 @@
 import numpy
 
 def array(arr, options=None):
-    """Return a (data, string) pair in `binary array' format.
+    """Return a plot item tuple in `binary array' format.
 
     The returned tuple can be used as an argument to the plot(), splot(), and
     replot() methods of xnuplot.Gnuplot.
@@ -9,7 +9,7 @@ def array(arr, options=None):
     return _array_or_record(arr, "array", options)
 
 def record(arr, options=None):
-    """Return a (data, string) pair in `binary record' format.
+    """Return a plot item tuple in `binary record' format.
 
     The returned tuple can be used as an argument to the plot(), splot(), and
     replot() methods of xnuplot.Gnuplot.
@@ -17,23 +17,10 @@ def record(arr, options=None):
     return _array_or_record(arr, "record", options)
 
 def matrix(arr, xcoords, ycoords, options=None):
-    """Return a (data, string) pair in `binary matrix' format.
+    """Return a plot item tuple in `binary matrix' format.
 
-    The returned tuple CANNOT be used as an argument to the plot(), splot(), or
+    The returned tuple can be used as an argument to the plot(), splot(), and
     replot() methods of xnuplot.Gnuplot.
-
-    Gnuplot (as of 4.4.0) fseek()s to the end of a `binary matrix' datafile
-    before reading the actual data, so sending the data through a pipe doesn't
-    work. The user must save the data to a temporary file and specify the
-    filename:
-
-    import os, tempfile, xnuplot
-    data, spec = matrix(arr, xcoords, ycoords)
-    tmpname = tempfile.mkstemp()
-    with open(tmpname, "wb") as f:
-        f.write(data)
-    xnuplot.Gnuplot().splot("'%s' volatile %s" % (tmpname, spec))
-    os.unlink(tmpname)
     """
     a = numpy.asarray(arr)
     if a.ndim != 2:
@@ -45,7 +32,12 @@ def matrix(arr, xcoords, ycoords, options=None):
     m[0, 1:] = xcoords
     m[1:, 0] = ycoords
     m[1:, 1:] = a
-    return (m.data, " ".join(filter(None, ["binary", "matrix", options])))
+    # Gnuplot (as of 4.4.0) fseek()s to the end of a `binary matrix' datafile
+    # before reading the actual data, so sending the data through a pipe
+    # doesn't work. Therefore, use "file" (see xnuplot.Gnuplot.plot()).
+    return (m.data,
+            " ".join(filter(None, ["binary", "matrix", options])),
+            "file")
 
 def _array_or_record(arr, array_or_record, options=None):
     a = numpy.asarray(arr)

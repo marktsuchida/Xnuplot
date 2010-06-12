@@ -82,7 +82,8 @@ class Gnuplot(object):
             shutil.rmtree(self.wk_dir)
             self.wk_dir = None
 
-    _placeholder_pattern = re.compile(r"\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}")
+    _placeholder_pattern = re.compile(
+            r"\{\{((?P<mode>file|pipe):)?(?P<name>[a-zA-Z_][a-zA-Z0-9_]*)\}\}")
     _exitquit_pattern = re.compile(r"\s*(quit|exit)(\W|$)")
     def __call__(self, command, **kwargs):
         """Send a command (or commands) to Gnuplot.
@@ -95,6 +96,12 @@ class Gnuplot(object):
         automatically created named pipes for passing data to Gnuplot. The data
         to pass must be given as a keyword argument with the same name (`foo'
         in this example).
+
+        The placeholders can also have a mode-indicating prefix: {{file:foo}} or
+        {{pipe:bar}}. The default is `pipe:'; `file:' causes the data to be
+        written to a temporary file instead of a named pipe. The temporary file
+        is not removed until the Gnuplot instance is deleted, so replot() can
+        reuse the data.
 
         The user is responsible for ensuring that the format of the data is
         correct for the command to be sent.
@@ -113,7 +120,7 @@ class Gnuplot(object):
                 raise ValueError("multi-line command contains file " +
                                  "placeholder(s) (not allowed)")
             return self.script(command)
-        names = [p.group(1) for p in placeholders]
+        names = [p.group("name") for p in placeholders]
         for name in names:
             if name not in kwargs:
                 raise KeyError(("content for file placeholder {{%s}} " +
@@ -126,10 +133,15 @@ class Gnuplot(object):
         substituted_command = ""
         start_of_next_chunk = 0
         for placeholder in placeholders:
-            name = placeholder.group(1)
+            name = placeholder.group("name")
+            mode = placeholder.group("mode")
             data = kwargs[name]
-            pipe = _OutboundNamedPipe(data, dir=self.wk_dir)
+
+            pipeclass = (_OutboundTempFile if mode == "file"
+                         else _OutboundNamedPipe)
+            pipe = pipeclass(data, dir=self.wk_dir)
             pipe.debug = self.debug
+
             span_start, span_stop = placeholder.span(0)
             substituted_command += command[start_of_next_chunk:span_start]
             substituted_command += Gnuplot.quote(pipe.path)
@@ -184,24 +196,37 @@ class Gnuplot(object):
             if isinstance(item, basestring):
                 item_strings.append(item)
             else:
-                if len(item) != 2 or not isinstance(item[1], basestring):
+                if len(item) not in (2, 3) or not isinstance(item[1],
+                                                             basestring):
                     raise ValueError("plot item must be a string or " +
-                                     "a (data, string) pair")
-                placeholder = "pipe%d" % i
-                item_strings.append("{{%s}} volatile %s" % (placeholder,
-                                                            item[1]))
+                                     "a (data, string[, mode]) tuple")
+                placeholder = "item%d" % i
+                if len(item) == 3 and item[2] == "file":
+                    item_base = "{{file:%s}}" % placeholder
+                else:
+                    if len(item) == 3 and item[2] and item[2] != "pipe":
+                        raise ValueError("unknown plot item mode")
+                    item_base = "{{pipe:%s}} volatile" % placeholder
+                item_strings.append(" ".join((item_base, item[1])))
                 data_dict[placeholder] = item[0]
         self(cmd + " " + ", ".join(item_strings), **data_dict)
 
     def plot(self, *items):
         """Issue a `plot' command with the given items.
 
-        Each argument (in `items') may be either a string, or a pair
-        (data, string). In the latter case, `data' will be piped to Gnuplot
-        (appearing to Gnuplot as a datafile), and `string' should not contain
-        a function or filename.
+        Each item can be a string, a pair (data, string), or a triple (data,
+        string, mode). If `data' is given, it is passed to Gnuplot (appearing
+        to Gnuplot as a datafile), and the (quoted) temporary filename is
+        inserted before `string'. The resulting strings are passed to Gnuplot's
+        `plot' command.
 
-        See also: splot()
+        If `mode' is given, it can have the value of either "pipe" or "file".
+        The default is "pipe", causing the data to be sent through a named pipe
+        (FIFO). If `mode' is "file", the data is written to a temporary file
+        instead. This can be useful if you want replot() to work, or if you
+        want to send `binary matrix' data, which doesn't work with named pipes.
+
+        See also: splot(), replot()
 
         Example:
         Gnuplot().plot("sin(x) notitle", "'some_file.dat' with lp",
@@ -212,27 +237,17 @@ class Gnuplot(object):
     def splot(self, *items):
         """Issue an `splot' command with the given items.
 
-        Each argument (in `items') may be either a string, or a pair
-        (data, string). In the latter case, `data' will be piped to Gnuplot
-        (appearing to Gnuplot as a datafile), and `string' should not contain
-        a function or filename.
-
-        See also: plot()
+        See the documentation for plot().
         """
         self._plot("splot", *items)
 
     def replot(self, *items):
         """Issue a `replot' command with the given items.
 
-        Each argument (in `items') may be either a string, or a pair
-        (data, string). In the latter case, `data' will be piped to Gnuplot
-        (appearing to Gnuplot as a datafile), and `string' should not contain
-        a function or filename.
+        See the documentation for plot().
 
         Note that `replot' does not work when the previous plot was made by
-        passing data to Gnuplot.
-
-        See also: plot(), splot()
+        passing data to Gnuplot, unless temporary files were used explicitly.
         """
         self._plot("replot", *items)
 
@@ -316,4 +331,27 @@ class _OutboundNamedPipe(threading.Thread):
             os.unlink(self.path)
             if self.made_dir:
                 os.rmdir(self.dir)
+
+class _OutboundTempFile(object):
+    # Temporary file with same interface as _OutboundNamedPipe.
+    def __init__(self, data, dir=None):
+        self.data = data
+        self.debug = False
+        fd, self.path = tempfile.mkstemp(prefix="file.", dir=dir)
+        os.write(fd, self.data)
+        os.close(fd)
+        if self.debug:
+            print >>sys.stderr, "<< wrote %d bytes to tempfile %s >>" % \
+                    (len(self.data), self.path)
+        if self.debug >= 2:
+            dump = subprocess.Popen(shlex.split("od -A x -t x2"),
+                                    stdin=subprocess.PIPE,
+                                    stdout=sys.stderr,
+                                    stderr=sys.stderr)
+            dump.communicate(input=self.data)
+
+    def unlink(self):
+        # If this is not called, the user is responsible for removing the file
+        # (by recursively removing the dir passed to __init__).
+        os.unlink(self.path)
 

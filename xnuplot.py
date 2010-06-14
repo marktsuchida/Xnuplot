@@ -189,6 +189,8 @@ class Gnuplot(object):
         return [self(line) for line in script.split("\n")]
 
     def _plot(self, cmd, *items):
+        if not items:
+            return None
         # Common implementation for plot() and splot().
         item_strings = []
         data_dict = {}
@@ -209,7 +211,7 @@ class Gnuplot(object):
                     item_base = "{{pipe:%s}} volatile" % placeholder
                 item_strings.append(" ".join((item_base, item[1])))
                 data_dict[placeholder] = item[0]
-        self(cmd + " " + ", ".join(item_strings), **data_dict)
+        return self(cmd + " " + ", ".join(item_strings), **data_dict)
 
     def plot(self, *items):
         """Issue a `plot' command with the given items.

@@ -17,6 +17,9 @@ class SpawnError(RuntimeError):
 class CommunicationError(RuntimeError):
     """Raised when communication with Gnuplot subprocess failed."""
 
+class GnuplotError(RuntimeError):
+    """Raised when Gnuplot returns a (known) error."""
+
 class Gnuplot(object):
     """Manager for communication with a Gnuplot subprocess."""
 
@@ -190,7 +193,7 @@ class Gnuplot(object):
 
     def _plot(self, cmd, *items):
         if not items:
-            return None
+            return
         # Common implementation for plot() and splot().
         item_strings = []
         data_dict = {}
@@ -211,7 +214,10 @@ class Gnuplot(object):
                     item_base = "{{pipe:%s}} volatile" % placeholder
                 item_strings.append(" ".join((item_base, item[1])))
                 data_dict[placeholder] = item[0]
-        return self(cmd + " " + ", ".join(item_strings), **data_dict)
+        result = self(cmd + " " + ", ".join(item_strings), **data_dict)
+        # Result should be the empty string if successful.
+        if len(result):
+            raise GnuplotError("`%s' returned error" % cmd, result)
 
     def plot(self, *items):
         """Issue a `plot' command with the given items.

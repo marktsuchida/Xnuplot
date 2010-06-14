@@ -46,14 +46,9 @@ def _array_or_record(arr, array_or_record, options=None):
     a, format = _gnuplot_array_and_format(a)
     byteorder = _gnuplot_byteorder(a.dtype)
     endian = (None if byteorder == "default" else "endian=%s" % byteorder)
-    scan = None
-    if a.ndim > 3:
-        a = numpy.require(a, requirements="C")
-    elif not a.flags.carray:
-        if a.ndim == 3: scan = "scan=zyx"
-        elif a.ndim == 2: scan = "scan=yx"
+    a = numpy.require(a, requirements="C")
     return (a.data, " ".join(filter(None, ["binary", dataspec,
-                                           format, endian, scan,
+                                           format, endian,
                                            options])))
 
 def _gnuplot_array_and_format(a):

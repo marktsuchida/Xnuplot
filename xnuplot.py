@@ -71,7 +71,7 @@ class Gnuplot(object):
 
     def close(self):
         """Close the Gnuplot subprocess and remove all temporary files."""
-        if self.gp_proc is not None and self.gp_proc.isalive():
+        if self.isalive():
             self("quit")
         else:
             self.terminate()
@@ -84,6 +84,9 @@ class Gnuplot(object):
         if self.wk_dir:
             shutil.rmtree(self.wk_dir)
             self.wk_dir = None
+
+    def isalive(self):
+        return self.gp_proc is not None and self.gp_proc.isalive()
 
     _placeholder_pattern = re.compile(
             r"\{\{((?P<mode>file|pipe):)?(?P<name>[a-zA-Z_][a-zA-Z0-9_]*)\}\}")

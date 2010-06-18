@@ -167,10 +167,14 @@ class Gnuplot(object):
             return None
 
         try:
-            # At least on Mac OS X, I get the command echoed back whether or
-            # not I have echoing turned on for the pty. And the echoed-back
-            # command is wrapped with CRs but terminated with a CRLF. So
-            # discard everything up to the first CRLF.
+            # If Gnuplot is compiled with GNU readline support, we get the
+            # echoed command string (this is true even if echoing is turned off
+            # for the terminal). This string is wrapped with CRs, but it is
+            # terminated by a CRLF. So discard everything up to the first CRLF.
+            # This may need to be tweaked if Gnuplot was built without GNU
+            # readline, built with Mac OS X's native non-GNU libreadline, or
+            # built on other systems. Ideally, this would be done at build time
+            # by some sort of automatic detection scheme.
             self.gp_proc.expect_exact("\r\n")
             self.gp_proc.expect_exact(self.gp_prompt)
         except pexpect.EOF:

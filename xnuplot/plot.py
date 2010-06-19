@@ -19,6 +19,7 @@ class _ObservedList(list):
             def meth(*args, **kwargs):
                 result = list.__getattribute__(self, name)(*args, **kwargs)
                 self.refresh()
+                return result
             return meth
         elif name in ("__add__",
                       "__radd__",

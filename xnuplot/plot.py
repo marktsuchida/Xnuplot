@@ -29,7 +29,7 @@ class _ObservedList(list):
 class Plot(Gnuplot, _ObservedList):
     _plotmethod = Gnuplot.plot
 
-    def __init__(self, command=None, persist=True, autorefresh=True):
+    def __init__(self, command=None, persist=False, autorefresh=True):
         _ObservedList.__init__(self, [])
         Gnuplot.__init__(self, command, persist)
         self.autorefresh = autorefresh

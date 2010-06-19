@@ -22,7 +22,7 @@ class RawGnuplot(object):
 
     gp_prompt = "gnuplot> "
 
-    def __init__(self, command="/usr/bin/env gnuplot", persist=True):
+    def __init__(self, command="/usr/bin/env gnuplot", persist=False):
         """Return a new Gnuplot object.
 
         Keyword Arguments:

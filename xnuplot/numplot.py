@@ -1,7 +1,7 @@
 import numpy
 
 class _PlotItem(object):
-    # Compatible with xnuplot.PlotItem, but with an array for the data.
+    # Compatible with xnuplot.gnuplot.PlotItem, but with an array for the data.
     def __init__(self, array, options=None, use_real_file=False):
         # The array must be in the correct binary format.
         self.array = array
@@ -15,7 +15,7 @@ def array(arr, options=None):
     """Return a plot item in `binary array' format.
 
     The returned tuple can be used as an argument to the plot(), splot(), and
-    replot() methods of xnuplot.Gnuplot.
+    replot() methods of xnuplot.gnuplot.Gnuplot.
     """
     return _array_or_record(arr, "array", options)
 
@@ -23,7 +23,7 @@ def record(arr, options=None):
     """Return a plot item in `binary record' format.
 
     The returned tuple can be used as an argument to the plot(), splot(), and
-    replot() methods of xnuplot.Gnuplot.
+    replot() methods of xnuplot.gnuplot.Gnuplot.
     """
     return _array_or_record(arr, "record", options)
 
@@ -31,7 +31,7 @@ def matrix(arr, xcoords, ycoords, options=None):
     """Return a plot item in `binary matrix' format.
 
     The returned tuple can be used as an argument to the plot(), splot(), and
-    replot() methods of xnuplot.Gnuplot.
+    replot() methods of xnuplot.gnuplot.Gnuplot.
     """
     a = numpy.asarray(arr)
     if a.ndim != 2:
@@ -46,7 +46,7 @@ def matrix(arr, xcoords, ycoords, options=None):
     options = " ".join(filter(None, ["binary", "matrix", options]))
     # Gnuplot (as of 4.4.0) fseek()s to the end of a `binary matrix' datafile
     # before reading the actual data, so sending the data through a pipe
-    # doesn't work. Therefore, use real file (see xnuplot.PlotItem).
+    # doesn't work. Therefore, use real file (see xnuplot.gnuplot.PlotItem).
     return _PlotItem(m, options, use_real_file=True)
 
 def _array_or_record(arr, array_or_record, options=None):

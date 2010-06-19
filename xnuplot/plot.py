@@ -1,38 +1,28 @@
 from .gnuplot import Gnuplot
 
 class _ObservedList(list):
-    # A list that calls self.refresh() upon modification (and disallows use of
-    # the addition and multiplication operators).
-
-    def __getattribute__(self, name):
-        if name in ("append",
-                    "extend",
-                    "insert",
-                    "pop",
-                    "remove",
-                    "reverse",
-                    "sort",
-                    "__setitem__",
-                    "__delitem__",
-                    "__setslice__",
-                    "__delslice__",):
-            def meth(*args, **kwargs):
-                result = list.__getattribute__(self, name)(*args, **kwargs)
-                self.refresh()
-                return result
-            return meth
-        elif name in ("__add__",
-                      "__radd__",
-                      "__iadd__",
-                      "__mul__",
-                      "__rmul__",
-                      "__imul__",):
-            raise NotImplementedError
-        else:
-            return list.__getattribute__(self, name)
-
+    # A list that calls self.refresh() upon modification.
     def refresh(self):
         pass
+    def __with_refresh(func):
+        def call_and_refresh(self, *args, **kwargs):
+            result = func(self, *args, **kwargs)
+            self.refresh()
+            return result
+        return call_and_refresh
+    append = __with_refresh(list.append)
+    extend = __with_refresh(list.extend)
+    insert = __with_refresh(list.insert)
+    pop = __with_refresh(list.pop)
+    remove = __with_refresh(list.remove)
+    reverse = __with_refresh(list.reverse)
+    sort = __with_refresh(list.sort)
+    __setitem__ = __with_refresh(list.__setitem__)
+    __delitem__ = __with_refresh(list.__delitem__)
+    __setslice__ = __with_refresh(list.__setslice__)
+    __delslice__ = __with_refresh(list.__delslice__)
+    __iadd__ = __with_refresh(list.__iadd__)
+    __imul__ = __with_refresh(list.__imul__)
 
 class Plot(Gnuplot, _ObservedList):
     def __init__(self, command=None, persist=True):

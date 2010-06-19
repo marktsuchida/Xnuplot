@@ -40,27 +40,20 @@ class Gnuplot(object):
         try:
             self.gp_proc = pexpect.spawn(command)
             self.gp_proc.delaybeforesend = 0
-        except Exception as e:
-            os.rmdir(self.wk_dir)
-            raise SpawnError(str(e))
-        except BaseException:
+        except:
             os.rmdir(self.wk_dir)
             raise
+        ok = False
         try:
             self.gp_proc.expect_exact(self.gp_prompt)
+            ok = True
         except pexpect.EOF:
-            if self.gp_proc.isalive():
-                warnings.warn("killing potentially zombie Gnuplot process")
-            self.gp_proc.close(force=True)
-            os.rmdir(self.wk_dir)
-            raise SpawnError("Gnuplot died before first prompt")
+            raise CommunicationError("Gnuplot died before showing prompt")
         except pexpect.TIMEOUT:
-            self.gp_proc.close(force=True)
-            os.rmdir(self.wk_dir)
-            raise SpawnError("timeout")
-        except BaseException:
-            os.rmdir(self.wk_dir)
-            raise
+            raise CommunicationError("timeout")
+        finally:
+            if not ok:
+                self.terminate()
 
     def __enter__(self):
         return self
@@ -71,10 +64,8 @@ class Gnuplot(object):
 
     def close(self):
         """Close the Gnuplot subprocess and remove all temporary files."""
-        if self.isalive():
-            self("quit")
-        else:
-            self.terminate()
+        # Soft quitting is no different from force-quitting.
+        self.terminate()
 
     def terminate(self):
         """Force-quit the Gnuplot subprocess and remove all temporary files."""

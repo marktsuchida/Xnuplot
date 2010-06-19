@@ -2,12 +2,14 @@ from .gnuplot import Gnuplot
 
 class _ObservedList(list):
     # A list that calls self.refresh() upon modification.
+    autorefresh = True
     def refresh(self):
         pass
     def __with_refresh(func):
         def call_and_refresh(self, *args, **kwargs):
             result = func(self, *args, **kwargs)
-            self.refresh()
+            if self.autorefresh:
+                self.refresh()
             return result
         return call_and_refresh
     append = __with_refresh(list.append)

@@ -25,6 +25,8 @@ class _ObservedList(list):
     __imul__ = __with_refresh(list.__imul__)
 
 class Plot(Gnuplot, _ObservedList):
+    _plotmethod = Gnuplot.plot
+
     def __init__(self, command=None, persist=True):
         _ObservedList.__init__(self, [])
         Gnuplot.__init__(self, command, persist)
@@ -44,7 +46,7 @@ class Plot(Gnuplot, _ObservedList):
         self._refreshing = True
         try:
             if len(self):
-                self.plot(*self)
+                self._plotmethod(*self)
             else:
                 self("clear")
         finally:
@@ -58,14 +60,9 @@ class Plot(Gnuplot, _ObservedList):
                            doc="If true, refresh the plot after every call.")
 
     def __repr__(self):
-        return "<Plot %s>" % _ObservedList.__repr__(self)
+        classname = self.__class__.__name__
+        return "<%s %s>" % (classname, _ObservedList.__repr__(self))
 
 class SPlot(Plot):
-    def __init__(self, command=None, persist=True):
-        # When Plot.refresh() calls Gnuplot.plot(), redirect it to splot().
-        self.plot = self.splot
-        Plot.__init__(self, command, persist)
-
-    def __repr__(self):
-        return "<SPlot %s>" % _ObservedList.__repr__(self)
+    _plotmethod = Gnuplot.splot
 

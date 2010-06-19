@@ -1,2 +1,2 @@
 from .plot import Plot, SPlot
-__all__ = ["gnuplot", "numplot"]
+__all__ = ["Plot", "SPlot", "gnuplot", "numplot"]

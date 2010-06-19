@@ -30,6 +30,8 @@ class RawGnuplot(object):
         persist - whether the plot window should stay open after this object
                   (and hence the Gnuplot subprocess) is destroyed.
         """
+        if command is None:
+            command = "/usr/bin/env gnuplot"
         self._debug = False
         self.wk_dir = tempfile.mkdtemp(prefix="xnuplot.")
         if persist:

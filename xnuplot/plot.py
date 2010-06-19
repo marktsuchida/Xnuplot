@@ -1,30 +1,38 @@
 from .gnuplot import Gnuplot
 
 class _ObservedList(list):
-    # A list that calls self.refresh() upon modification.
+    # A list that calls self.refresh() upon modification when self.autorefresh
+    # is true..
     autorefresh = True
     def refresh(self):
         pass
-    def __with_refresh(func):
+
+    # Replace all list-modifying methods with wrapped versions that call
+    # self.refresh() when self.autorefresh is true.
+    @staticmethod
+    def _with_autorefresh(func):
         def call_and_refresh(self, *args, **kwargs):
             result = func(self, *args, **kwargs)
             if self.autorefresh:
                 self.refresh()
             return result
         return call_and_refresh
-    append = __with_refresh(list.append)
-    extend = __with_refresh(list.extend)
-    insert = __with_refresh(list.insert)
-    pop = __with_refresh(list.pop)
-    remove = __with_refresh(list.remove)
-    reverse = __with_refresh(list.reverse)
-    sort = __with_refresh(list.sort)
-    __setitem__ = __with_refresh(list.__setitem__)
-    __delitem__ = __with_refresh(list.__delitem__)
-    __setslice__ = __with_refresh(list.__setslice__)
-    __delslice__ = __with_refresh(list.__delslice__)
-    __iadd__ = __with_refresh(list.__iadd__)
-    __imul__ = __with_refresh(list.__imul__)
+    _modifying_methods = ["append", "extend",
+                          "insert", "pop",
+                          "remove",
+                          "reverse", "sort",
+                          "__setitem__", "__delitem__",
+                          "__setslice__", "__delslice__",
+                          "__iadd__", "__imul__"]
+
+for name in _ObservedList._modifying_methods:
+    # This cannot be done within the class definition, because there is no way
+    # to access the class object. (Actually, vars()[name] appears to work, but
+    # the documentation recommends against such usage.)
+    setattr(_ObservedList,
+            name,
+            _ObservedList._with_autorefresh(getattr(list, name)))
+
 
 class Plot(Gnuplot, _ObservedList):
     _plotmethod = Gnuplot.plot
@@ -35,11 +43,7 @@ class Plot(Gnuplot, _ObservedList):
         self.autorefresh = autorefresh
         self._refreshing = False
 
-    def __call__(self, *args, **kwargs):
-        result = Gnuplot.__call__(self, *args, **kwargs)
-        if self.autorefresh:
-            self.refresh()
-        return result
+    __call__ = _ObservedList._with_autorefresh(Gnuplot.__call__)
 
     def refresh(self):
         # Guard against infinite recursion.

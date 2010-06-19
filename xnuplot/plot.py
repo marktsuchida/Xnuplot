@@ -66,8 +66,8 @@ class Plot(Gnuplot, _ObservedList):
     autorefresh = property(get_autorefresh, set_autorefresh,
                            doc="If true, refresh the plot after every call.")
 
-    def repr(self):
-        return "<Plot %s>" % _ObservedList.repr()
+    def __repr__(self):
+        return "<Plot %s>" % _ObservedList.__repr__(self)
 
 class SPlot(Plot):
     def __init__(self, command=None, persist=True):
@@ -75,6 +75,6 @@ class SPlot(Plot):
         self.plot = self.splot
         Plot.__init__(self, command, persist)
 
-    def repr(self):
-        return "<SPlot %s>" % _ObservedList.repr()
+    def __repr__(self):
+        return "<SPlot %s>" % _ObservedList.__repr__(self)
 

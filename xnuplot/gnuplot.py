@@ -309,6 +309,12 @@ class PlotItem(object):
         self.data = data
         self.options = options
         self.use_real_file = use_real_file
+    def __repr__(self):
+        if self.options:
+            return "<PlotItem: %d bytes %s>" % (len(self.data),
+                                                repr(self.options))
+        else:
+            return "<PlotItem: %d bytes>" % len(self.data)
 
 class _OutboundNamedPipe(threading.Thread):
     # Asynchronous manager for named pipe for sending data.

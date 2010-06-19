@@ -11,9 +11,6 @@ import tempfile
 import threading
 import warnings
 
-class SpawnError(RuntimeError):
-    """Raised upon failure to initiate communication with Gnuplot subprocess."""
-
 class CommunicationError(RuntimeError):
     """Raised when communication with Gnuplot subprocess failed."""
 

@@ -1,7 +1,18 @@
 import numpy
 
+class _PlotItem(object):
+    # Compatible with xnuplot.PlotItem, but with an array for the data.
+    def __init__(self, array, options=None, use_real_file=False):
+        # The array must be in the correct binary format.
+        self.array = array
+        self.options = options
+        self.use_real_file = use_real_file
+    @property
+    def data(self):
+        return self.array.data
+
 def array(arr, options=None):
-    """Return a plot item tuple in `binary array' format.
+    """Return a plot item in `binary array' format.
 
     The returned tuple can be used as an argument to the plot(), splot(), and
     replot() methods of xnuplot.Gnuplot.
@@ -9,7 +20,7 @@ def array(arr, options=None):
     return _array_or_record(arr, "array", options)
 
 def record(arr, options=None):
-    """Return a plot item tuple in `binary record' format.
+    """Return a plot item in `binary record' format.
 
     The returned tuple can be used as an argument to the plot(), splot(), and
     replot() methods of xnuplot.Gnuplot.
@@ -17,7 +28,7 @@ def record(arr, options=None):
     return _array_or_record(arr, "record", options)
 
 def matrix(arr, xcoords, ycoords, options=None):
-    """Return a plot item tuple in `binary matrix' format.
+    """Return a plot item in `binary matrix' format.
 
     The returned tuple can be used as an argument to the plot(), splot(), and
     replot() methods of xnuplot.Gnuplot.
@@ -32,12 +43,11 @@ def matrix(arr, xcoords, ycoords, options=None):
     m[0, 1:] = xcoords
     m[1:, 0] = ycoords
     m[1:, 1:] = a
+    options = " ".join(filter(None, ["binary", "matrix", options]))
     # Gnuplot (as of 4.4.0) fseek()s to the end of a `binary matrix' datafile
     # before reading the actual data, so sending the data through a pipe
-    # doesn't work. Therefore, use "file" (see xnuplot.Gnuplot.plot()).
-    return (m.data,
-            " ".join(filter(None, ["binary", "matrix", options])),
-            "file")
+    # doesn't work. Therefore, use real file (see xnuplot.PlotItem).
+    return _PlotItem(m, options, use_real_file=True)
 
 def _array_or_record(arr, array_or_record, options=None):
     a = numpy.asarray(arr)
@@ -47,9 +57,9 @@ def _array_or_record(arr, array_or_record, options=None):
     byteorder = _gnuplot_byteorder(a.dtype)
     endian = (None if byteorder == "default" else "endian=%s" % byteorder)
     a = numpy.require(a, requirements="C")
-    return (a.data, " ".join(filter(None, ["binary", dataspec,
-                                           format, endian,
-                                           options])))
+    options = " ".join(filter(None, ["binary", dataspec,
+                                     format, endian, options]))
+    return _PlotItem(a, options)
 
 def _gnuplot_array_and_format(a):
     # Get the corresponding Gnuplot format, converting a if necessary.

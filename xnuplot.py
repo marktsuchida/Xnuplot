@@ -242,19 +242,17 @@ class Gnuplot(RawGnuplot):
             if isinstance(item, basestring):
                 item_strings.append(item)
             else:
-                if len(item) not in (2, 3) or not isinstance(item[1],
-                                                             basestring):
-                    raise ValueError("plot item must be a string or " +
-                                     "a (data, string[, mode]) tuple")
+                if isinstance(item, tuple):
+                    item = PlotItem(*item)
                 placeholder = "item%d" % i
-                if len(item) == 3 and item[2] == "file":
-                    item_base = "{{file:%s}}" % placeholder
+                if hasattr(item, "use_real_file") and item.use_real_file:
+                    item_str = "{{file:%s}}" % placeholder
                 else:
-                    if len(item) == 3 and item[2] and item[2] != "pipe":
-                        raise ValueError("unknown plot item mode")
-                    item_base = "{{pipe:%s}} volatile" % placeholder
-                item_strings.append(" ".join((item_base, item[1])))
-                data_dict[placeholder] = item[0]
+                    item_str = "{{pipe:%s}} volatile" % placeholder
+                if hasattr(item, "options") and item.options:
+                    item_str = " ".join((item_str, item.options))
+                item_strings.append(item_str)
+                data_dict[placeholder] = item.data
         result = self(cmd + " " + ", ".join(item_strings), **data_dict)
         # Result should be the empty string if successful.
         if len(result):
@@ -263,17 +261,8 @@ class Gnuplot(RawGnuplot):
     def plot(self, *items):
         """Issue a `plot' command with the given items.
 
-        Each item can be a string, a pair (data, string), or a triple (data,
-        string, mode). If `data' is given, it is passed to Gnuplot (appearing
-        to Gnuplot as a datafile), and the (quoted) temporary filename is
-        inserted before `string'. The resulting strings are passed to Gnuplot's
-        `plot' command.
-
-        If `mode' is given, it can have the value of either "pipe" or "file".
-        The default is "pipe", causing the data to be sent through a named pipe
-        (FIFO). If `mode' is "file", the data is written to a temporary file
-        instead. This can be useful if you want replot() to work, or if you
-        want to send `binary matrix' data, which doesn't work with named pipes.
+        Each item can be a string, a PlotItem instance, or a tuple (which is
+        used as the argument list to create a PlotItem instance).
 
         See also: splot(), replot()
 
@@ -299,6 +288,25 @@ class Gnuplot(RawGnuplot):
         passing data to Gnuplot, unless temporary files were used explicitly.
         """
         self._plot("replot", *items)
+
+class PlotItem(object):
+    """Wrapper for an item in a Gnuplot `plot' or `splot' command."""
+    def __init__(self, data, options=None, use_real_file=False):
+        """Return a new PlotItem.
+
+        Arguments:
+        data          - The data to be sent to Gnuplot.
+        options       - Datafile modifiers and plot options for the command
+                        line (a string, such as "using 2:1 with linespoints").
+        use_real_file - If true, a temporary file will be used to pass the data
+                        to Gnuplot. This can be useful if you want replot() to
+                        work, or if you want to send `binary matrix' data,
+                        which doesn't work with named pipes. By default, a
+                        named pipe is used.
+        """
+        self.data = data
+        self.options = options
+        self.use_real_file = use_real_file
 
 class _OutboundNamedPipe(threading.Thread):
     # Asynchronous manager for named pipe for sending data.

@@ -20,8 +20,8 @@ class CommunicationError(RuntimeError):
 class GnuplotError(RuntimeError):
     """Raised when Gnuplot returns a (known) error."""
 
-class Gnuplot(object):
-    """Manager for communication with a Gnuplot subprocess."""
+class RawGnuplot(object):
+    """Low-level manager for communication with a Gnuplot subprocess."""
 
     gp_prompt = "gnuplot> "
 
@@ -189,6 +189,52 @@ class Gnuplot(object):
         """
         return [self(line) for line in script.split("\n")]
 
+    def interact(self):
+        """Interact directly with the Gnuplot subprocess.
+
+        Handles control of the subprocess to the user.
+        The interactive session can be terminated by typing CTRL-].
+        """
+        # Debug mode (echoing) is a mere annoyance when in interactive mode.
+        @contextlib.contextmanager
+        def debug_turned_off():
+            save_debug = self.debug
+            self.debug = False
+            yield
+            self.debug = save_debug
+        with debug_turned_off():
+            print >>sys.stderr, "escape character is `^]'"
+            # Send a black command so that the prompt is printed.
+            self.gp_proc.sendline("")
+            self.gp_proc.interact()
+
+        # The user could have quit Gnuplot.
+        if not self.gp_proc.isalive():
+            self.terminate()
+
+    def set_timeout(self, seconds):
+        self.gp_proc.timeout = seconds
+    def get_timeout(self):
+        return self.gp_proc.timeout
+    timeout = property(get_timeout, set_timeout,
+                       doc="Timeout (in seconds) for replies from Gnuplot.")
+
+    def set_debug(self, debug=True):
+        self._debug = debug
+        self.gp_proc.logfile_read = (sys.stderr if debug else None)
+    def get_debug(self):
+        return self._debug
+    debug = property(get_debug, set_debug,
+                     doc="Echo communication with Gnuplot if true.")
+
+    @staticmethod
+    def quote(filename):
+        """Return a quoted string for use as part of a Gnuplot command."""
+        quoted =  "'" + filename.replace("\\", "\\\\").replace("'", "\\'") + "'"
+        return quoted
+
+class Gnuplot(RawGnuplot):
+    """Manager for communication with a Gnuplot subprocess."""
     def _plot(self, cmd, *items):
         if not items:
             return
@@ -256,50 +302,6 @@ class Gnuplot(object):
         passing data to Gnuplot, unless temporary files were used explicitly.
         """
         self._plot("replot", *items)
-
-    def interact(self):
-        """Interact directly with the Gnuplot subprocess.
-
-        Handles control of the subprocess to the user.
-        The interactive session can be terminated by typing CTRL-].
-        """
-        # Debug mode (echoing) is a mere annoyance when in interactive mode.
-        @contextlib.contextmanager
-        def debug_turned_off():
-            save_debug = self.debug
-            self.debug = False
-            yield
-            self.debug = save_debug
-        with debug_turned_off():
-            print >>sys.stderr, "escape character is `^]'"
-            # Send a black command so that the prompt is printed.
-            self.gp_proc.sendline("")
-            self.gp_proc.interact()
-
-        # The user could have quit Gnuplot.
-        if not self.gp_proc.isalive():
-            self.terminate()
-
-    def set_timeout(self, seconds):
-        self.gp_proc.timeout = seconds
-    def get_timeout(self):
-        return self.gp_proc.timeout
-    timeout = property(get_timeout, set_timeout,
-                       doc="Timeout (in seconds) for replies from Gnuplot.")
-
-    def set_debug(self, debug=True):
-        self._debug = debug
-        self.gp_proc.logfile_read = (sys.stderr if debug else None)
-    def get_debug(self):
-        return self._debug
-    debug = property(get_debug, set_debug,
-                     doc="Echo communication with Gnuplot if true.")
-
-    @staticmethod
-    def quote(filename):
-        """Return a quoted string for use as part of a Gnuplot command."""
-        quoted =  "'" + filename.replace("\\", "\\\\").replace("'", "\\'") + "'"
-        return quoted
 
 class _OutboundNamedPipe(threading.Thread):
     # Asynchronous manager for named pipe for sending data.

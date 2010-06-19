@@ -27,15 +27,15 @@ class _ObservedList(list):
 class Plot(Gnuplot, _ObservedList):
     _plotmethod = Gnuplot.plot
 
-    def __init__(self, command=None, persist=True):
+    def __init__(self, command=None, persist=True, autorefresh=True):
         _ObservedList.__init__(self, [])
         Gnuplot.__init__(self, command, persist)
-        self._autorefresh = False
+        self.autorefresh = autorefresh
         self._refreshing = False
 
     def __call__(self, *args, **kwargs):
         result = Gnuplot.__call__(self, *args, **kwargs)
-        if self._autorefresh:
+        if self.autorefresh:
             self.refresh()
         return result
 
@@ -51,13 +51,6 @@ class Plot(Gnuplot, _ObservedList):
                 self("clear")
         finally:
             self._refreshing = False
-
-    def set_autorefresh(self, auto=True):
-        self._autorefresh = True
-    def get_autorefresh(self):
-        return self._autorefresh
-    autorefresh = property(get_autorefresh, set_autorefresh,
-                           doc="If true, refresh the plot after every call.")
 
     def __repr__(self):
         classname = self.__class__.__name__

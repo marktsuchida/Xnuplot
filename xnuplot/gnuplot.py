@@ -211,20 +211,24 @@ class RawGnuplot(object):
         if not self.gp_proc.isalive():
             self.terminate()
 
-    def set_timeout(self, seconds):
-        self.gp_proc.timeout = seconds
-    def get_timeout(self):
+    @property
+    def timeout(self):
+        "Timeout (in seconds) for replies from Gnuplot."
         return self.gp_proc.timeout
-    timeout = property(get_timeout, set_timeout,
-                       doc="Timeout (in seconds) for replies from Gnuplot.")
 
-    def set_debug(self, debug=True):
+    @timeout.setter
+    def timeout(self, seconds):
+        self.gp_proc.timeout = seconds
+
+    @property
+    def debug(self):
+        "Echo communication with Gnuplot if true."
+        return self._debug
+
+    @debug.setter
+    def debug(self, debug):
         self._debug = debug
         self.gp_proc.logfile_read = (sys.stderr if debug else None)
-    def get_debug(self):
-        return self._debug
-    debug = property(get_debug, set_debug,
-                     doc="Echo communication with Gnuplot if true.")
 
     @staticmethod
     def quote(filename):

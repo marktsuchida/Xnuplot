@@ -249,7 +249,7 @@ class Gnuplot(RawGnuplot):
                 item_strings.append(item)
             else:
                 if isinstance(item, tuple):
-                    item = PlotItem(*item)
+                    item = PlotData(*item)
                 placeholder = "item%d" % i
                 if hasattr(item, "use_real_file") and item.use_real_file:
                     item_str = "{{file:%s}}" % placeholder
@@ -267,8 +267,8 @@ class Gnuplot(RawGnuplot):
     def plot(self, *items):
         """Issue a `plot' command with the given items.
 
-        Each item can be a string, a PlotItem instance, or a tuple (which is
-        used as the argument list to create a PlotItem instance).
+        Each item can be a string, a PlotData instance, or a tuple (which is
+        used as the argument list to create a PlotData instance).
 
         See also: splot(), replot()
 
@@ -295,10 +295,10 @@ class Gnuplot(RawGnuplot):
         """
         self._plot("replot", *items)
 
-class PlotItem(object):
-    """Wrapper for an item in a Gnuplot `plot' or `splot' command."""
+class PlotData(object):
+    """Wrapper for a data item in a Gnuplot `plot' or `splot' command."""
     def __init__(self, data, options=None, use_real_file=False):
-        """Return a new PlotItem.
+        """Initialize a PlotData object.
 
         Arguments:
         data          - The data to be sent to Gnuplot.
@@ -315,10 +315,10 @@ class PlotItem(object):
         self.use_real_file = use_real_file
     def __repr__(self):
         if self.options:
-            return "<PlotItem: %d bytes %s>" % (len(self.data),
-                                                repr(self.options))
+            return "<PlotData data=%s options=%s>" % (repr(self.data),
+                                                      repr(self.options))
         else:
-            return "<PlotItem: %d bytes>" % len(self.data)
+            return "<PlotData data=%s>" % repr(self.data)
 
 class _OutboundNamedPipe(threading.Thread):
     # Asynchronous manager for named pipe for sending data.

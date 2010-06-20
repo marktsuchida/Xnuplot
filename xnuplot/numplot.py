@@ -1,27 +1,5 @@
+from . import gnuplot
 import numpy
-
-class _PlotItem(object):
-    # Compatible with xnuplot.gnuplot.PlotItem, but with an array for the data.
-
-    def __init__(self, array, options=None, use_real_file=False):
-        # The array must be in the correct binary format.
-        self.array = array
-        self.options = options
-        self.use_real_file = use_real_file
-
-    @property
-    def data(self):
-        return self.array.data
-
-    def __repr__(self):
-        if self.options:
-            return "<PlotItem: ndarray %s, %s; %s>" % (repr(self.array.shape),
-                                                       str(self.array.dtype),
-                                                       repr(self.options))
-        else:
-            return "<PlotItem: ndarray %s, %s>" % (repr(self.array.shape),
-                                                   str(self.array.dtype))
-
 
 def array(arr, options=None):
     """Return a plot item in `binary array' format.
@@ -58,8 +36,8 @@ def matrix(arr, xcoords, ycoords, options=None):
     options = " ".join(filter(None, ["binary", "matrix", options]))
     # Gnuplot (as of 4.4.0) fseek()s to the end of a `binary matrix' datafile
     # before reading the actual data, so sending the data through a pipe
-    # doesn't work. Therefore, use real file (see xnuplot.gnuplot.PlotItem).
-    return _PlotItem(m, options, use_real_file=True)
+    # doesn't work. Therefore, use real file.
+    return gnuplot.PlotData(m.data, options, use_real_file=True)
 
 def _array_or_record(arr, array_or_record, options=None):
     a = numpy.asarray(arr)
@@ -71,7 +49,7 @@ def _array_or_record(arr, array_or_record, options=None):
     a = numpy.require(a, requirements="C")
     options = " ".join(filter(None, ["binary", dataspec,
                                      format, endian, options]))
-    return _PlotItem(a, options)
+    return gnuplot.PlotData(a.data, options)
 
 def _gnuplot_array_and_format(a):
     # Get the corresponding Gnuplot format, converting a if necessary.

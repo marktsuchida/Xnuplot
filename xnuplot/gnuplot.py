@@ -162,9 +162,9 @@ class RawGnuplot(object):
             # for the terminal). This string is wrapped with CRs, but it is
             # terminated by a CRLF. So discard everything up to the first CRLF.
             # This may need to be tweaked if Gnuplot was built without GNU
-            # readline, built with Mac OS X's native non-GNU libreadline, or
-            # built on other systems. Ideally, this would be done at build time
-            # by some sort of automatic detection scheme.
+            # readline, built with Mac OS X's native non-GNU libedit, or built
+            # on other systems. Ideally, this would be done at build time by
+            # some sort of automatic detection scheme.
             self.gp_proc.expect_exact("\r\n")
             self.gp_proc.expect_exact(self.gp_prompt)
         except pexpect.EOF:

@@ -78,115 +78,99 @@ class RawGnuplot(object):
     def isalive(self):
         return self.gp_proc is not None and self.gp_proc.isalive()
 
-    _placeholder_pattern = re.compile(
-            r"\{\{((?P<mode>file|pipe):)?(?P<name>[a-zA-Z_][a-zA-Z0-9_]*)\}\}")
-    _exitquit_pattern = re.compile(r"\s*(quit|exit)(\W|$)")
-    def __call__(self, command, **kwargs):
+    def __call__(self, command, **data):
         """Send a command (or commands) to Gnuplot.
 
-        If `command' contains newlines, __call__(command) is equivalent to
-        script(command).
+        The output from Gnuplot is returned as a string. If command contains
+        multiple lines, nonempty outputs from each command are concatenated
+        with newlines as separators. Thus, if none of the commands printed
+        anything, an empty string is returned.
 
-        If `command' is a single line, it can contain file placeholders of the
-        form `{{foo}}'. These are substituted with temporary filenames for
-        automatically created named pipes for passing data to Gnuplot. The data
-        to pass must be given as a keyword argument with the same name (`foo'
-        in this example).
+        A special mechanism is provided to send data to Gnuplot, using what
+        Gnuplot calls a `datafile'. This can be done by placing strings of the
+        form `{{foo}}' (we call this a data placefolder with name `foo') within
+        the command, where normally a quoted filename would appear. Then, the
+        data that Gnuplot should read should be supplied as a keyword argument.
+        The data can be any object that, when written to a file, generates the
+        correct representation for Gnuplot.
 
-        The placeholders can also have a mode-indicating prefix: {{file:foo}} or
-        {{pipe:bar}}. The default is `pipe:'; `file:' causes the data to be
-        written to a temporary file instead of a named pipe. The temporary file
-        is not removed until the Gnuplot instance is deleted, so replot() can
-        reuse the data.
-
-        The user is responsible for ensuring that the format of the data is
-        correct for the command to be sent.
-
-        The return value is the tty output from Gnuplot (excluding the Gnuplot>
-        prompt). This is often the empty string for successful commands.
-
-        Example:
+        For example:
         gp = Gnuplot()
-        gp("plot {{data}} notitle with linespoints", data="1 1\n2 2\n3 3")
-        """
-        mode = ("script" if "\n" in command else "line")
-        placeholders = list(self._placeholder_pattern.finditer(command))
-        if mode == "script":
-            if len(placeholders):
-                raise ValueError("multi-line command contains file " +
-                                 "placeholder(s) (not allowed)")
-            return self.script(command)
-        names = [p.group("name") for p in placeholders]
-        for name in names:
-            if name not in kwargs:
-                raise KeyError(("content for file placeholder {{%s}} " +
-                    "not provided as keyword argument" % name))
-        if len(names) > len(set(names)):
-            raise ValueError("duplicate file placeholder name(s)")
+        gp("plot {{data}} notitle with lines", data="1 2\n2 1\n3 3")
 
-        # For each placeholder, create the pipe to send the data, and
-        # substitute the name of the pipe for the placeholder.
+        The actual passing of data is achieved, by default, through the use of
+        named pipes (FIFOs). The Gnuplot `volatile' datafile modifier is
+        automatically appended. This works well most of the time, but there are
+        some cases where Gnuplot requires random access to the data, where
+        pipes fail (one example of this is the `binary matrix' data format). To
+        handle such cases, use of a real file can be forced by the syntax
+        `{{file:foo}}'. The default syntax (`{{foo}}') is equivalent to
+        `{{pipe:foo}}'. When `file:' is specified in a data placeholder, the
+        file is not removed until close() is called on the Gnuplot instance.
+        This can also be handy for interactive use of the `replot' command.
+        """
+        results = []
+        for cmd in command.split("\n"):
+            result = self._send_one_command(cmd, **data)
+            if result is None:
+                # None is returned when Gnuplot exited normally.
+                break
+            if result:
+                results.append(result)
+        return "\n".join(results)
+
+    _placeholder_pattern = re.compile(
+            r"\{\{((?P<mode>file|pipe):)?(?P<name>[a-zA-Z_][a-zA-Z0-9_]*)\}\}")
+    @contextlib.contextmanager
+    def _placeholders_substituted(self, command, **data):
         substituted_command = ""
-        start_of_next_chunk = 0
-        for placeholder in placeholders:
+        start_of_next_chunk = 0 # Position after current placeholder.
+        for placeholder in self._placeholder_pattern.finditer(command):
             name = placeholder.group("name")
             mode = placeholder.group("mode")
-            data = kwargs[name]
-
             pipeclass = (_OutboundTempFile if mode == "file"
                          else _OutboundNamedPipe)
-            pipe = pipeclass(data, dir=self.wk_dir)
+            pipe = pipeclass(data[name], dir=self.wk_dir)
             pipe.debug = self.debug
-
             span_start, span_stop = placeholder.span(0)
             substituted_command += command[start_of_next_chunk:span_start]
             substituted_command += Gnuplot.quote(pipe.path)
             start_of_next_chunk = span_stop
         substituted_command += command[start_of_next_chunk:]
-        command = substituted_command
+        yield substituted_command
+        # Destruction calls on the pipes can be cleanly added in the future.
 
-        self.gp_proc.sendline(command)
-
-        # The `quit' and `exit' commands require special handling.
-        if self._exitquit_pattern.match(command):
+    def _send_one_command(self, command, **data):
+        # Do the acutal work for __call__().
+        with self._placeholders_substituted(command, **data) as command:
+            self.gp_proc.sendline(command)
             try:
-                self.gp_proc.expect(pexpect.EOF)
+                # If Gnuplot is compiled with GNU readline support, we get the
+                # echoed command string (this is true even if echoing is turned
+                # off for the terminal). This string is wrapped with CRs, but
+                # it is terminated by a CRLF. So discard everything up to the
+                # first CRLF. This may need to be tweaked if Gnuplot was built
+                # without GNU readline, built with Mac OS X's native non-GNU
+                # libedit, or built on other systems. Ideally, this would be
+                # done at build time by some sort of automatic detection
+                # scheme.
+                self.gp_proc.expect_exact("\r\n")
+                self.gp_proc.expect_exact(self.gp_prompt)
+            except pexpect.EOF:
+                if self.gp_proc.isalive():
+                    warnings.warn("killing potentially zombie Gnuplot process")
+                self.terminate()
+                if re.match(r"\s*(quit|exit)(\W|$)", command):
+                    return None
+                else:
+                    raise CommunicationError("Gnuplot died")
             except pexpect.TIMEOUT:
-                warnings.warn("timeout after quit command sent")
-            self.terminate()
-            return None
-
-        try:
-            # If Gnuplot is compiled with GNU readline support, we get the
-            # echoed command string (this is true even if echoing is turned off
-            # for the terminal). This string is wrapped with CRs, but it is
-            # terminated by a CRLF. So discard everything up to the first CRLF.
-            # This may need to be tweaked if Gnuplot was built without GNU
-            # readline, built with Mac OS X's native non-GNU libedit, or built
-            # on other systems. Ideally, this would be done at build time by
-            # some sort of automatic detection scheme.
-            self.gp_proc.expect_exact("\r\n")
-            self.gp_proc.expect_exact(self.gp_prompt)
-        except pexpect.EOF:
-            if self.gp_proc.isalive():
-                warnings.warn("killing potentially zombie Gnuplot process")
-            self.terminate()
-            raise CommunicationError("Gnuplot died")
-        except pexpect.TIMEOUT:
-            if self.gp_proc.isalive():
-                warnings.warn("killing potentially hanged Gnuplot process")
-            self.terminate()
-            raise CommunicationError("timeout")
+                if self.gp_proc.isalive():
+                    warnings.warn("killing potentially hanged Gnuplot process")
+                self.terminate()
+                raise CommunicationError("timeout")
         result = self.gp_proc.before
-        return result
-
-    def script(self, script):
-        """Send a series of commands to Gnuplot.
-
-        `script' is split at newlines and sent, one by one, to Gnuplot.
-        A list of result strings is returned.
-        """
-        return [self(line) for line in script.split("\n")]
+        return result.replace("\r\n", "\n")
 
     def interact(self):
         """Interact directly with the Gnuplot subprocess.

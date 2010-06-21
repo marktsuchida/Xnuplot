@@ -47,7 +47,7 @@ class Plot(Gnuplot, _ObservedList):
 
     def refresh(self):
         # Guard against infinite recursion.
-        if self._refreshing:
+        if self._refreshing or not self.isalive():
             return
         self._refreshing = True
         try:

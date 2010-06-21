@@ -96,11 +96,10 @@ class RawGnuplot(object):
 
         For example:
         gp = Gnuplot()
-        gp("plot {{data}} notitle with lines", data="1 2\n2 1\n3 3")
+        gp("plot {{data}} volatile notitle with lines", data="1 2\n2 1\n3 3")
 
         The actual passing of data is achieved, by default, through the use of
-        named pipes (FIFOs). The Gnuplot `volatile' datafile modifier is
-        automatically appended. This works well most of the time, but there are
+        named pipes (FIFOs). This works well most of the time, but there are
         some cases where Gnuplot requires random access to the data, where
         pipes fail (one example of this is the `binary matrix' data format). To
         handle such cases, use of a real file can be forced by the syntax

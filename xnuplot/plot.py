@@ -37,9 +37,9 @@ for name in _ObservedList._modifying_methods:
 class Plot(Gnuplot, _ObservedList):
     _plotmethod = Gnuplot.plot
 
-    def __init__(self, command=None, persist=False, autorefresh=True):
+    def __init__(self, autorefresh=True, **kwargs):
         _ObservedList.__init__(self, [])
-        Gnuplot.__init__(self, command, persist)
+        Gnuplot.__init__(self, **kwargs)
         self.autorefresh = autorefresh
         self._refreshing = False
 

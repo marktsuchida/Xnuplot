@@ -22,25 +22,29 @@ class RawGnuplot(object):
 
     gp_prompt = "gnuplot> "
 
-    def __init__(self, command="/usr/bin/env gnuplot", persist=False):
+    def __init__(self, command="/usr/bin/env gnuplot",
+                 persist=False, tempdir=None):
         """Return a new Gnuplot object.
 
         Keyword Arguments:
-        command - the command to use to invoke Gnuplot.
-        persist - whether the plot window should stay open after this object
+        command - The command to use to invoke Gnuplot.
+        persist - Whether the plot window should stay open after this object
                   (and hence the Gnuplot subprocess) is destroyed.
+        tempdir - Directory to use for temporary data. A new directory is
+                  created within the given directory, whose name is stored in
+                  self.tempdir.
         """
         if command is None:
             command = "/usr/bin/env gnuplot"
         self._debug = False
-        self.wk_dir = tempfile.mkdtemp(prefix="xnuplot.")
+        self.tempdir = tempfile.mkdtemp(prefix="xnuplot.", dir=tempdir)
         if persist:
             command += " -persist"
         try:
             self.gp_proc = pexpect.spawn(command)
             self.gp_proc.delaybeforesend = 0
         except:
-            os.rmdir(self.wk_dir)
+            os.rmdir(self.tempdir)
             raise
         ok = False
         try:
@@ -71,9 +75,9 @@ class RawGnuplot(object):
         if self.gp_proc is not None:
             self.gp_proc.close(force=True)
             self.gp_proc = None
-        if self.wk_dir:
-            shutil.rmtree(self.wk_dir)
-            self.wk_dir = None
+        if self.tempdir:
+            shutil.rmtree(self.tempdir)
+            self.tempdir = None
 
     def isalive(self):
         return self.gp_proc is not None and self.gp_proc.isalive()
@@ -131,7 +135,7 @@ class RawGnuplot(object):
             mode = placeholder.group("mode")
             pipeclass = (_OutboundTempFile if mode == "file"
                          else _OutboundNamedPipe)
-            pipe = pipeclass(data[name], dir=self.wk_dir)
+            pipe = pipeclass(data[name], dir=self.tempdir)
             pipe.debug = self.debug
             span_start, span_stop = placeholder.span(0)
             substituted_command += command[start_of_next_chunk:span_start]

@@ -106,11 +106,9 @@ class RawGnuplot(object):
         named pipes (FIFOs). This works well most of the time, but there are
         some cases where Gnuplot requires random access to the data, where
         pipes fail (one example of this is the `binary matrix' data format). To
-        handle such cases, use of a real file can be forced by the syntax
+        handle such cases, use of a temporary file can be forced by the syntax
         `{{file:foo}}'. The default syntax (`{{foo}}') is equivalent to
-        `{{pipe:foo}}'. When `file:' is specified in a data placeholder, the
-        file is not removed until close() is called on the Gnuplot instance.
-        This can also be handy for interactive use of the `replot' command.
+        `{{pipe:foo}}'.
         """
         if not self.isalive():
             raise CommunicationError("Gnuplot process has exited.")
@@ -130,6 +128,7 @@ class RawGnuplot(object):
     def _placeholders_substituted(self, command, **data):
         substituted_command = ""
         start_of_next_chunk = 0 # Position after current placeholder.
+        pipes = []
         for placeholder in self._placeholder_pattern.finditer(command):
             name = placeholder.group("name")
             mode = placeholder.group("mode")
@@ -137,13 +136,15 @@ class RawGnuplot(object):
                          else _OutboundNamedPipe)
             pipe = pipeclass(data[name], dir=self.tempdir)
             pipe.debug = self.debug
+            pipes.append(pipe)
             span_start, span_stop = placeholder.span(0)
             substituted_command += command[start_of_next_chunk:span_start]
             substituted_command += Gnuplot.quote(pipe.path)
             start_of_next_chunk = span_stop
         substituted_command += command[start_of_next_chunk:]
         yield substituted_command
-        # Destruction calls on the pipes can be cleanly added in the future.
+        for pipe in pipes:
+            pipe.cleanup()
 
     def _send_one_command(self, command, **data):
         # Do the acutal work for __call__().
@@ -335,6 +336,14 @@ class _OutboundNamedPipe(threading.Thread):
         os.mkfifo(self.path)
         self.start()
 
+    def cleanup(self):
+        if self.path:
+            os.unlink(self.path)
+            self.path = None
+        if self.made_dir:
+            os.rmdir(self.dir)
+            self.made_dir = False
+
     def run(self):
         try:
             with open(self.path, "wb") as pipe:
@@ -349,9 +358,7 @@ class _OutboundNamedPipe(threading.Thread):
                                         stderr=sys.stderr)
                 dump.communicate(input=self.data)
         finally:
-            os.unlink(self.path)
-            if self.made_dir:
-                os.rmdir(self.dir)
+            self.cleanup()
 
 class _OutboundTempFile(object):
     # Temporary file with same interface as _OutboundNamedPipe.
@@ -371,8 +378,8 @@ class _OutboundTempFile(object):
                                     stderr=sys.stderr)
             dump.communicate(input=self.data)
 
-    def unlink(self):
-        # If this is not called, the user is responsible for removing the file
-        # (by recursively removing the dir passed to __init__).
-        os.unlink(self.path)
+    def cleanup(self):
+        if self.path:
+            os.unlink(self.path)
+            self.path = None
 

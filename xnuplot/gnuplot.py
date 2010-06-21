@@ -109,6 +109,8 @@ class RawGnuplot(object):
         file is not removed until close() is called on the Gnuplot instance.
         This can also be handy for interactive use of the `replot' command.
         """
+        if not self.isalive():
+            raise CommunicationError("Gnuplot process has exited.")
         results = []
         for cmd in command.split("\n"):
             result = self._send_one_command(cmd, **data)
@@ -178,6 +180,8 @@ class RawGnuplot(object):
         Handles control of the subprocess to the user.
         The interactive session can be terminated by typing CTRL-].
         """
+        if not self.isalive():
+            raise CommunicationError("Gnuplot process has exited.")
         # Debug mode (echoing) is a mere annoyance when in interactive mode.
         @contextlib.contextmanager
         def debug_turned_off():
@@ -198,10 +202,14 @@ class RawGnuplot(object):
     @property
     def timeout(self):
         "Timeout (in seconds) for replies from Gnuplot."
+        if not self.isalive():
+            raise CommunicationError("Gnuplot process has exited.")
         return self.gp_proc.timeout
 
     @timeout.setter
     def timeout(self, seconds):
+        if not self.isalive():
+            raise CommunicationError("Gnuplot process has exited.")
         self.gp_proc.timeout = seconds
 
     @property
@@ -212,7 +220,8 @@ class RawGnuplot(object):
     @debug.setter
     def debug(self, debug):
         self._debug = debug
-        self.gp_proc.logfile_read = (sys.stderr if debug else None)
+        if self.isalive():
+            self.gp_proc.logfile_read = (sys.stderr if debug else None)
 
     @staticmethod
     def quote(filename):

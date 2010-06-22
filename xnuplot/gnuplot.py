@@ -337,12 +337,8 @@ class _OutboundNamedPipe(threading.Thread):
         self.start()
 
     def cleanup(self):
-        if self.path:
-            os.unlink(self.path)
-            self.path = None
-        if self.made_dir:
-            os.rmdir(self.dir)
-            self.made_dir = False
+        # Cleanup is done in run() to avoid race conditions.
+        pass
 
     def run(self):
         try:
@@ -358,7 +354,9 @@ class _OutboundNamedPipe(threading.Thread):
                                         stderr=sys.stderr)
                 dump.communicate(input=self.data)
         finally:
-            self.cleanup()
+            os.unlink(self.path)
+            if self.made_dir:
+                os.rmdir(self.dir)
 
 class _OutboundTempFile(object):
     # Temporary file with same interface as _OutboundNamedPipe.

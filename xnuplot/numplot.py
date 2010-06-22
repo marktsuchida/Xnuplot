@@ -1,4 +1,5 @@
 from . import gnuplot
+from . import Plot as xPlot, SPlot as xSPlot
 import numpy
 
 def array(arr, options=None):
@@ -84,4 +85,22 @@ def _gnuplot_byteorder(numpy_dtype):
     elif e == ">": return "big"
     elif e == "<": return "little"
     else: raise TypeError("cannot get byte order of NumPy array")
+
+class _NumPlot(object):
+    def append_array(self, arr, options=None):
+        self.append(array(arr, options))
+    def insert_array(self, index, arr, options=None):
+        self.insert(index, array(arr, options))
+    def append_record(self, arr, options=None):
+        self.append(record(arr, options))
+    def insert_record(self, index, arr, options=None):
+        self.insert(index, record(arr, options))
+    def append_matrix(self, arr, xcoords, ycoords, options=None):
+        self.append(matrix(arr, xcoords, ycoords, options))
+    def insert_matrix(self, index, arr, xcoords, ycoords, options=None):
+        self.insert(index, matrix(arr, xcoords, ycoords, options))
+
+class Plot(xPlot, _NumPlot): pass
+
+class SPlot(xSPlot, _NumPlot): pass
 

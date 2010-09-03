@@ -5,6 +5,9 @@ import numpy
 def array(arr, options=None):
     """Return a plot item in `binary array' format.
 
+    arr must be ndim >= 2, and the last dimension corresponds to the `using'
+    items (e.g. if arr.shape[-1] == 3, you can say `using 1:2:3').
+
     The returned tuple can be used as an argument to the plot(), splot(), and
     replot() methods of xnuplot.gnuplot.Gnuplot.
     """
@@ -12,6 +15,9 @@ def array(arr, options=None):
 
 def record(arr, options=None):
     """Return a plot item in `binary record' format.
+
+    arr must be ndim >= 2, and the last dimension corresponds to the `using'
+    items (e.g. if arr.shape[-1] == 3, you can say `using 1:2:3').
 
     The returned tuple can be used as an argument to the plot(), splot(), and
     replot() methods of xnuplot.gnuplot.Gnuplot.
@@ -26,7 +32,7 @@ def matrix(arr, xcoords, ycoords, options=None):
     """
     a = numpy.asarray(arr)
     if a.ndim != 2:
-        raise ValueError("array for Gnuplot matrix must have 2 dimensions")
+        raise ValueError("array for Gnuplot matrix must have ndim == 2")
     # `binary matrix' requires float32.
     m = numpy.empty((a.shape[0] + 1, a.shape[1] + 1),
                     dtype=numpy.float32, order="C")
@@ -42,9 +48,16 @@ def matrix(arr, xcoords, ycoords, options=None):
 
 def _array_or_record(arr, array_or_record, options=None):
     a = numpy.asarray(arr)
-    shape = ",".join(str(s) for s in reversed(a.shape))
+    # TODO To support structured arrays (arr.dtype.fields is not None), we
+    # would allow ndim to be 1 iff arr is a structured array, use the full
+    # (reversed) shape of arr for the dataspec, skip the count, and convert the
+    # individual field dtypes into a single Gnuplot format string.
+    if a.ndim == 1:
+        raise ValueError("array for Gnuplot array/record must have ndim >= 2")
+    shape = ",".join(str(s) for s in reversed(a.shape[:-1]))
+    count = a.shape[-1]
     dataspec = "%s=(%s)" % (array_or_record, shape)
-    a, format = _gnuplot_array_and_format(a)
+    a, format = _gnuplot_array_and_format(a, count)
     byteorder = _gnuplot_byteorder(a.dtype)
     endian = (None if byteorder == "default" else "endian=%s" % byteorder)
     a = numpy.require(a, requirements="C")
@@ -52,7 +65,7 @@ def _array_or_record(arr, array_or_record, options=None):
                                      format, endian, options]))
     return gnuplot.PlotData(a.data, options)
 
-def _gnuplot_array_and_format(a):
+def _gnuplot_array_and_format(a, count=1):
     # Get the corresponding Gnuplot format, converting a if necessary.
     try:
         typespec = _gnuplot_type_for_dtype(a.dtype)
@@ -62,7 +75,11 @@ def _gnuplot_array_and_format(a):
         else:
             a = a.astype(numpy.float32)
         typespec = _gnuplot_type_for_dtype(a.dtype)
-    return a, "format='%%%s'" % typespec
+    if count > 1:
+        format = "format='%%%d%s'" % (count, typespec)
+    else:
+        format = "format='%%%s'" % typespec
+    return a, format
 
 def _gnuplot_type_for_dtype(numpy_dtype):
     t = numpy_dtype.type

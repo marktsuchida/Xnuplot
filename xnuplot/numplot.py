@@ -2,33 +2,48 @@ from . import gnuplot
 from . import Plot as xPlot, SPlot as xSPlot
 import numpy
 
-def array(arr, options=None):
+def array(arr, options=None, coord_options=None, using=None):
     """Return a plot item in `binary array' format.
 
     arr must be ndim >= 2, and the last dimension corresponds to the `using'
-    items (e.g. if arr.shape[-1] == 3, you can say `using 1:2:3').
+    items (e.g. if arr.shape[-1] == 3, you can use `using=(1, 0, 2)').
 
-    The returned tuple can be used as an argument to the plot(), splot(), and
-    replot() methods of xnuplot.gnuplot.Gnuplot.
+    options       - Gnuplot plotting options (axes, title, with)
+    coord_options - Gnuplot `binary array' coordinate generation options (dx,
+                    dy, dz, flipz, flipy, flipz, origin, center, rotate,
+                    perpendicular)
+    using         - tuple specifying the Gnuplot `using' list, but with
+                    zero-based indexing (along the last axis of arr)
+
+    The returned object can be added to instances of xnuplot.plot.[S]Plot or
+    xnuplot.numplot.[S]Plot, or can be used as an argument to the plot(),
+    splot(), and replot() methods of xnuplot.gnuplot.Gnuplot,
     """
-    return _array_or_record(arr, "array", options)
+    return _array_or_record(arr, "array", options,
+                            coord_options=coord_options, using=using)
 
-def record(arr, options=None):
+def record(arr, options=None, using=None):
     """Return a plot item in `binary record' format.
 
     arr must be ndim >= 2, and the last dimension corresponds to the `using'
-    items (e.g. if arr.shape[-1] == 3, you can say `using 1:2:3').
+    items (e.g. if arr.shape[-1] == 3, you can use `using=(1, 0, 2)').
 
-    The returned tuple can be used as an argument to the plot(), splot(), and
-    replot() methods of xnuplot.gnuplot.Gnuplot.
+    options       - Gnuplot plotting options (axes, title, with)
+    using         - tuple specifying the Gnuplot `using' list, but with
+                    zero-based indexing (along the last axis of arr)
+
+    The returned object can be added to instances of xnuplot.plot.[S]Plot or
+    xnuplot.numplot.[S]Plot, or can be used as an argument to the plot(),
+    splot(), and replot() methods of xnuplot.gnuplot.Gnuplot,
     """
-    return _array_or_record(arr, "record", options)
+    return _array_or_record(arr, "record", options, using=using)
 
 def matrix(arr, xcoords, ycoords, options=None):
     """Return a plot item in `binary matrix' format.
 
-    The returned tuple can be used as an argument to the plot(), splot(), and
-    replot() methods of xnuplot.gnuplot.Gnuplot.
+    The returned object can be added to instances of xnuplot.plot.[S]Plot or
+    xnuplot.numplot.[S]Plot, or can be used as an argument to the plot(),
+    splot(), and replot() methods of xnuplot.gnuplot.Gnuplot,
     """
     a = numpy.asarray(arr)
     if a.ndim != 2:
@@ -46,23 +61,35 @@ def matrix(arr, xcoords, ycoords, options=None):
     # doesn't work. Therefore, use real file.
     return gnuplot.PlotData(m.data, options, mode="file")
 
-def _array_or_record(arr, array_or_record, options=None):
-    a = numpy.asarray(arr)
+def _array_or_record(arr, array_or_record, options,
+                     coord_options=None, using=None):
+    a = numpy.require(arr, requirements="C")
+
     # TODO To support structured arrays (arr.dtype.fields is not None), we
     # would allow ndim to be 1 iff arr is a structured array, use the full
     # (reversed) shape of arr for the dataspec, skip the count, and convert the
     # individual field dtypes into a single Gnuplot format string.
+
     if a.ndim == 1:
         raise ValueError("array for Gnuplot array/record must have ndim >= 2")
     shape = ",".join(str(s) for s in reversed(a.shape[:-1]))
     count = a.shape[-1]
+
     dataspec = "%s=(%s)" % (array_or_record, shape)
     a, format = _gnuplot_array_and_format(a, count)
     byteorder = _gnuplot_byteorder(a.dtype)
     endian = (None if byteorder == "default" else "endian=%s" % byteorder)
-    a = numpy.require(a, requirements="C")
-    options = " ".join(filter(None, ["binary", dataspec,
-                                     format, endian, options]))
+
+    if using is not None:
+        if numpy.isscalar(using):
+            using = (using,)
+        if min(using) < 0 or max(using) >= count:
+            raise ValueError("`using' specifier is out of bounds")
+        using = "using %s" % ":".join(i + 1 for i in using)
+
+    options = " ".join(filter(None, ["binary", dataspec, format, endian,
+                                     coord_options, using, options]))
+
     return gnuplot.PlotData(a.data, options)
 
 def _gnuplot_array_and_format(a, count=1):
@@ -104,14 +131,16 @@ def _gnuplot_byteorder(numpy_dtype):
     else: raise TypeError("cannot get byte order of NumPy array")
 
 class _NumPlot(object):
-    def append_array(self, arr, options=None):
-        self.append(array(arr, options))
-    def insert_array(self, index, arr, options=None):
-        self.insert(index, array(arr, options))
-    def append_record(self, arr, options=None):
-        self.append(record(arr, options))
-    def insert_record(self, index, arr, options=None):
-        self.insert(index, record(arr, options))
+    # A mix-in to add convenience methods.
+    def append_array(self, arr, options=None, coord_options=None, using=None):
+        self.append(array(arr, options, coord_options, using))
+    def insert_array(self, index, arr, options=None,
+                     coord_options=None, using=None):
+        self.insert(index, array(arr, options, coord_options, using))
+    def append_record(self, arr, options=None, using=None):
+        self.append(record(arr, options, using))
+    def insert_record(self, index, arr, options=None, using=None):
+        self.insert(index, record(arr, options, using))
     def append_matrix(self, arr, xcoords, ycoords, options=None):
         self.append(matrix(arr, xcoords, ycoords, options))
     def insert_matrix(self, index, arr, xcoords, ycoords, options=None):

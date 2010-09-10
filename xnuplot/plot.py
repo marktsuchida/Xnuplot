@@ -130,5 +130,7 @@ def load(file, persist=False, autorefresh=True):
         else:
             plot.append(_PlotData(*item))
     plot.autorefresh = autorefresh
+    if autorefresh:
+        plot.refresh()
     return plot
 

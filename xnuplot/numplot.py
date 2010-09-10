@@ -59,7 +59,7 @@ def matrix(arr, xcoords, ycoords, options=None):
     # Gnuplot (as of 4.4.0) fseek()s to the end of a `binary matrix' datafile
     # before reading the actual data, so sending the data through a pipe
     # doesn't work. Therefore, use real file.
-    return gnuplot.PlotData(m.data, options, mode="file")
+    return gnuplot.PlotData(m, options, mode="file")
 
 def _array_or_record(arr, array_or_record, options,
                      coord_options=None, using=None):
@@ -90,7 +90,7 @@ def _array_or_record(arr, array_or_record, options,
     options = " ".join(filter(None, ["binary", dataspec, format, endian,
                                      coord_options, using, options]))
 
-    return gnuplot.PlotData(a.data, options)
+    return gnuplot.PlotData(a, options)
 
 def _gnuplot_array_and_format(a, count=1):
     # Get the corresponding Gnuplot format, converting a if necessary.

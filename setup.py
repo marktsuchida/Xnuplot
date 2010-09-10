@@ -6,5 +6,6 @@ setup(
       author='Mark A. Tsuchida',
       author_email='mark@tsuchida.org',
       packages=['xnuplot'],
+      scripts=['scripts/xnuplot'],
      )
 

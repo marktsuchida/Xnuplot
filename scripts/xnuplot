@@ -1,0 +1,76 @@
+#!/usr/bin/env python
+
+import xnuplot
+import optparse
+import sys
+
+usage = "usage: %prog [options] FILE"
+parser = optparse.OptionParser(usage=usage)
+parser.add_option("-t", "--terminal", metavar="TERM",
+                  help="set the Gnuplot terminal to TERM")
+parser.add_option("-o", "--output", metavar="FILE",
+                  help="set the Gnuplot output to FILE; "
+                  "implies --no-interactive")
+parser.add_option("-p", "--persist", action="store_true",
+                  help="plot and quit, but keep the plot window open; "
+                  "implies --no-interactive")
+parser.add_option("-v", "--verbose", action="count",
+                  help="increase verbosity for debug output")
+parser.add_option("-i", "--interactive", action="store_true",
+                  help="allow user interaction, even if -o or -p is given")
+parser.add_option("--no-interactive", action="store_false", dest="interactive",
+                  help="plot and quit without user interaction")
+options, args = parser.parse_args()
+
+def error(msg):
+    print >>sys.stderr, msg
+    sys.exit(1)
+
+if not len(args):
+    error("no input file given")
+
+do_interactive = True
+if options.output is not None or options.persist:
+    do_interactive = False
+if options.interactive:
+    do_interactive = True
+if options.interactive is False: # As opposed to None.
+    do_interactive = False
+
+done = False
+for filename in args:
+    if len(args) > 1:
+        print "[%s]" % filename
+
+    plot = xnuplot.load(filename, persist=options.persist, autorefresh=True)
+    if options.terminal is not None:
+        plot("set terminal %s" % options.terminal)
+    if options.output is not None:
+        plot("set output %s" % plot.quote(options.output))
+    if options.verbose > 0:
+        plot.debug = options.verbose
+    plot.refresh()
+
+    if do_interactive:
+        savename = filename
+        while True:
+            plot.interact()
+            print
+            if not plot.isalive():
+                break
+            plot.refresh()
+            ans = raw_input("[Interact/Save/Next/Quit] ?")
+            if not ans or ans[0] in "iI":
+                continue
+            elif ans[0] in "sS":
+                newname = raw_input("save as [%s]:" % savename)
+                savename = newname if newname else savename
+                plot.save(savename)
+            elif ans[0] in "nN":
+                break
+            elif ans[0] in "qQ":
+                done = True
+                break
+        if done:
+            break
+

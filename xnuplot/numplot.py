@@ -44,7 +44,7 @@ def matrix(arr, xcoords, ycoords, options=None):
     # Gnuplot (as of 4.4.0) fseek()s to the end of a `binary matrix' datafile
     # before reading the actual data, so sending the data through a pipe
     # doesn't work. Therefore, use real file.
-    return gnuplot.PlotData(m.data, options, use_real_file=True)
+    return gnuplot.PlotData(m.data, options, mode="file")
 
 def _array_or_record(arr, array_or_record, options=None):
     a = numpy.asarray(arr)

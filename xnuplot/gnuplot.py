@@ -248,7 +248,7 @@ class Gnuplot(RawGnuplot):
                 if isinstance(item, tuple):
                     item = PlotData(*item)
                 placeholder = "item%d" % i
-                if hasattr(item, "use_real_file") and item.use_real_file:
+                if hasattr(item, "mode") and item.mode == "file":
                     item_str = "{{file:%s}}" % placeholder
                 else:
                     item_str = "{{pipe:%s}} volatile" % placeholder
@@ -294,28 +294,30 @@ class Gnuplot(RawGnuplot):
 
 class PlotData(object):
     """Wrapper for a data item in a Gnuplot `plot' or `splot' command."""
-    def __init__(self, data, options=None, use_real_file=False):
+    def __init__(self, data, options=None, mode=None):
         """Initialize a PlotData object.
 
         Arguments:
-        data          - The data to be sent to Gnuplot.
-        options       - Datafile modifiers and plot options for the command
-                        line (a string, such as "using 2:1 with linespoints").
-        use_real_file - If true, a temporary file will be used to pass the data
-                        to Gnuplot. This can be useful if you want replot() to
-                        work, or if you want to send `binary matrix' data,
-                        which doesn't work with named pipes. By default, a
-                        named pipe is used.
+        data    - The data to be sent to Gnuplot.
+        options - Datafile modifiers and plot options for the command line (a
+                  string, such as "using 2:1 with linespoints").
+        mode    - One of "pipe" or "file". If "file", a temporary file will be
+                  used to pass the data to Gnuplot. This can be useful if you
+                  want to send `binary matrix' data, which doesn't work with
+                  named pipes. By default ("pipe"), a named pipe is used.
         """
         self.data = data
         self.options = options
-        self.use_real_file = use_real_file
+        if mode is None:
+            mode = "pipe"
+        if mode not in ("pipe", "file"):
+            raise ValueError('PlotData mode must be either "pipe" or "file"')
+        self.mode = mode
     def __repr__(self):
-        if self.options:
-            return "<PlotData data=%s options=%s>" % (repr(self.data),
-                                                      repr(self.options))
-        else:
-            return "<PlotData data=%s>" % repr(self.data)
+        data_str = " data=" + repr(self.data)
+        options_str = " options=" + repr(self.options) if self.options else ""
+        mode_str = " mode=file" if self.mode == "file" else " mode=pipe"
+        return "<PlotData%s%s%s>" % (data_str, options_str, mode_str)
 
 class _OutboundNamedPipe(threading.Thread):
     # Asynchronous manager for named pipe for sending data.

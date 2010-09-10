@@ -314,7 +314,7 @@ class PlotData(object):
             raise ValueError('PlotData mode must be either "pipe" or "file"')
         self.mode = mode
     def __repr__(self):
-        data_str = " data=" + repr(self.data)
+        data_str = " source=" + type(self.data).__name__
         options_str = " options=" + repr(self.options) if self.options else ""
         mode_str = " mode=file" if self.mode == "file" else " mode=pipe"
         return "<PlotData%s%s%s>" % (data_str, options_str, mode_str)

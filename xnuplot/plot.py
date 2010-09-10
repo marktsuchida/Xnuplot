@@ -1,4 +1,7 @@
-from .gnuplot import Gnuplot
+from .gnuplot import Gnuplot, PlotData as _PlotData
+import cPickle as _pickle
+
+_MAGIC = "xnuplot-saved-session"
 
 class _ObservedList(list):
     # A list that calls self.refresh() upon modification when self.autorefresh
@@ -36,6 +39,7 @@ for name in _ObservedList._modifying_methods:
 
 class Plot(Gnuplot, _ObservedList):
     _plotmethod = Gnuplot.plot
+    _plotcmd = "plot" # for save()
 
     def __init__(self, autorefresh=True, **kwargs):
         _ObservedList.__init__(self, [])
@@ -58,10 +62,73 @@ class Plot(Gnuplot, _ObservedList):
         finally:
             self._refreshing = False
 
+    def save(self, file):
+        items = []
+        for item in self:
+            if isinstance(item, basestring):
+                items.append(item)
+            else:
+                if isinstance(item, tuple):
+                    item = _PlotData(*item)
+                items.append((item.data, item.options, item.mode))
+
+        script = self("save '-'").split("\n")
+        script = [line for line in script if len(line) and
+                  not line.lstrip().startswith("#") and
+                  not line.startswith("plot ") and
+                  not line.startswith("splot ") and
+                  not line.startswith("GNUTERM =")]
+        script = "\n".join(script)
+
+        data = {"magic": _MAGIC, "version": 0,
+                "script": script,
+                "plot": self._plotcmd, "items": items}
+
+        if hasattr(file, "write"):
+            _pickle.dump(data, file)
+        else:
+            with open(file, "wb") as f:
+                _pickle.dump(data, f)
+
     def __repr__(self):
         classname = self.__class__.__name__
         return "<%s %s>" % (classname, _ObservedList.__repr__(self))
 
 class SPlot(Plot):
     _plotmethod = Gnuplot.splot
+    _plotcmd = "splot" # for save()
+
+class FormatError(Exception): pass
+
+def load(file, persist=False, autorefresh=True):
+    if hasattr(file, "read"):
+        data = _pickle.load(file)
+    else:
+        with open(file) as f:
+            data = _pickle.load(f)
+
+    try:
+        if data["magic"] != _MAGIC:
+            raise Exception()
+    except:
+        raise FormatError("does not appear to be an xnuplot session file")
+    if data["version"] > 0:
+        raise FormatError("file saved by a newer version of xnuplot")
+
+    kwargs = dict(persist=persist, autorefresh=False)
+    if data["plot"] == "plot":
+        plot = Plot(**kwargs)
+    elif data["plot"] == "splot":
+        plot = SPlot(**kwargs)
+    else:
+        raise FormatError("unknown plot type: %s" % data["plot"])
+
+    plot(data["script"])
+    for item in data["items"]:
+        if isinstance(item, basestring):
+            plot.append(item)
+        else:
+            plot.append(_PlotData(*item))
+    plot.autorefresh = autorefresh
+    return plot
 

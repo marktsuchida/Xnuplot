@@ -245,11 +245,11 @@ class Gnuplot(RawGnuplot):
                 if isinstance(item, tuple):
                     item = PlotData(*item)
                 placeholder = "item%d" % i
-                if hasattr(item, "mode") and item.mode == "file":
+                if item.mode == "file":
                     item_str = "{{file:%s}}" % placeholder
                 else:
                     item_str = "{{pipe:%s}} volatile" % placeholder
-                if hasattr(item, "options") and item.options:
+                if item.options:
                     item_str = " ".join((item_str, item.options))
                 item_strings.append(item_str)
                 data_dict[placeholder] = item.data

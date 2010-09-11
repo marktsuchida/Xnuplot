@@ -59,11 +59,11 @@ for filename in args:
             if not plot.isalive():
                 break
             plot.refresh()
-            ans = raw_input("[Interact/Save/Next/Quit] ?")
+            ans = raw_input("[Interact/Save/Next/Quit]? ")
             if not ans or ans[0] in "iI":
                 continue
             elif ans[0] in "sS":
-                newname = raw_input("save as [%s]:" % savename)
+                newname = raw_input("save as [%s]: " % savename)
                 savename = newname if newname else savename
                 plot.save(savename)
             elif ans[0] in "nN":

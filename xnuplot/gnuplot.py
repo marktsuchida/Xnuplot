@@ -292,6 +292,12 @@ class Gnuplot(RawGnuplot):
         """
         self._plot("replot", *items)
 
+    def source(self, script):
+        """Issue a `load' command, piping the given script as input."""
+        if not script.endswith("\n"):
+            script += "\n"
+        return self("load {{script}}", script=script)
+
 class PlotData(object):
     """Wrapper for a data item in a Gnuplot `plot' or `splot' command."""
     def __init__(self, data, options=None, mode=None):

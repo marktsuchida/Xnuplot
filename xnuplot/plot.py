@@ -123,7 +123,7 @@ def load(file, persist=False, autorefresh=True):
     else:
         raise FormatError("unknown plot type: %s" % data["plot"])
 
-    plot(data["script"])
+    plot.source(data["script"])
     for item in data["items"]:
         if isinstance(item, basestring):
             plot.append(item)

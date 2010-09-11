@@ -22,8 +22,7 @@ class RawGnuplot(object):
 
     gp_prompt = "gnuplot> "
 
-    def __init__(self, command="/usr/bin/env gnuplot",
-                 persist=False, tempdir=None):
+    def __init__(self, command="gnuplot", persist=False, tempdir=None):
         """Return a new Gnuplot object.
 
         Keyword Arguments:
@@ -34,8 +33,6 @@ class RawGnuplot(object):
                   created within the given directory, whose name is stored in
                   self.tempdir.
         """
-        if command is None:
-            command = "/usr/bin/env gnuplot"
         self._debug = False
         self.tempdir = tempfile.mkdtemp(prefix="xnuplot.", dir=tempdir)
         if persist:

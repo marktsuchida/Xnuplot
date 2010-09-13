@@ -1,5 +1,5 @@
 from . import gnuplot
-from . import Plot as xPlot, SPlot as xSPlot
+from . import Plot as _Plot, SPlot as _SPlot
 import numpy
 
 def array(arr, options=None, coord_options=None, using=None):
@@ -146,7 +146,7 @@ class _NumPlot(object):
     def insert_matrix(self, index, arr, xcoords, ycoords, options=None):
         self.insert(index, matrix(arr, xcoords, ycoords, options))
 
-class Plot(xPlot, _NumPlot): pass
+class Plot(_Plot, _NumPlot): pass
 
-class SPlot(xSPlot, _NumPlot): pass
+class SPlot(_SPlot, _NumPlot): pass
 

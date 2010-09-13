@@ -250,7 +250,7 @@ class Gnuplot(RawGnuplot):
                     item_str = double_brace("file:{0}".format(placeholder))
                 else:
                     item_str = double_brace("pipe:{0}".format(placeholder))
-                    item_str += " volatile"
+                item_str += " volatile"
                 if item.options:
                     item_str = " ".join((item_str, item.options))
                 item_strings.append(item_str)

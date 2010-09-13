@@ -63,15 +63,22 @@ class Plot(Gnuplot, _ObservedList):
         finally:
             self._refreshing = False
 
-    def fit(self, data, expr, via, ranges=None):
+    def fit(self, data, expr, via, ranges=None,
+            limit=None, maxiter=None, start_lambda=None, lambda_factor=None):
         """Perform a Gnuplot `fit'.
 
-        data   - a PlotData instance, or a tuple to be used to construct one.
-        expr   - the Gnuplot expression for the function to fit to.
-        via    - a string (e.g. "a, b"), a tuple (e.g. ("a", "b")), or a dict
-                 with initial parameter values (e.g. dict(a=0.1, b=3.0)).
-        ranges - a string specifying the ranges (passed unmodified to Gnuplot).
-        (Note the different ordering of the arguments from Gnuplot.)
+        data          - a PlotData instance, or a tuple to be used to construct
+                        one
+        expr          - the Gnuplot expression for the function to fit to
+        via           - a string (e.g. "a, b"), a tuple (e.g. ("a", "b")), or a
+                        dict with initial parameter values (e.g. dict(a=0.1,
+                        b=3.0))
+        ranges        - a string specifying the ranges (passed unmodified to
+                        Gnuplot)
+        limit         - set Gnuplot's FIT_LIMIT
+        maxiter       - set Gnuplot's FIT_MAXITER
+        start_lambda  - set Gnuplot's FIT_START_LAMBDA
+        lambda_factor - set Gnuplot's FIT_LAMBDA_FACTOR
 
         Returns: (params, errors, log) where params and errors are dicts whose
                  keys are the parameter names given by the via argument.
@@ -83,7 +90,8 @@ class Plot(Gnuplot, _ObservedList):
         self._refreshing = True
         skip_autorefresh = False
         try:
-            return self._fit(data, expr, via, ranges)
+            return self._fit(data, expr, via, ranges, limit, maxiter,
+                             start_lambda, lambda_factor)
         except:
             skip_autorefresh = True
         finally:
@@ -91,7 +99,8 @@ class Plot(Gnuplot, _ObservedList):
             if not skip_autorefresh and self.autorefresh:
                 self.refresh()
 
-    def _fit(self, data, expr, via, ranges):
+    def _fit(self, data, expr, via, ranges,
+             limit, maxiter, start_lambda, lambda_factor):
         if isinstance(via, basestring):
             vars = tuple(v.strip() for v in via.split(","))
         if isinstance(via, collections.Mapping):
@@ -104,6 +113,11 @@ class Plot(Gnuplot, _ObservedList):
         else:
             vars = tuple(via)
         via = ", ".join(vars)
+
+        self("FIT_LIMIT = {0:e}".format(limit if limit is not None else 1e-5))
+        self("FIT_MAXITER = {0:d}".format(maxiter or 0))
+        self("FIT_START_LAMBDA = {0:e}".format(start_lambda or 0.0))
+        self("FIT_LAMBDA_FACTOR = {0:e}".format(lambda_factor or 0.0))
 
         self("set fit logfile '/dev/null' errorvariables")
         log = super(Plot, self).fit(data, expr, via, ranges).strip() + "\n"

@@ -244,11 +244,13 @@ class Gnuplot(RawGnuplot):
             else:
                 if isinstance(item, tuple):
                     item = PlotData(*item)
-                placeholder = "item%d" % i
+                placeholder = "item{0}".format(i)
+                double_brace = lambda s: "{{" + s + "}}"
                 if item.mode == "file":
-                    item_str = "{{file:%s}}" % placeholder
+                    item_str = double_brace("file:{0}".format(placeholder))
                 else:
-                    item_str = "{{pipe:%s}} volatile" % placeholder
+                    item_str = double_brace("pipe:{0}".format(placeholder))
+                    item_str += " volatile"
                 if item.options:
                     item_str = " ".join((item_str, item.options))
                 item_strings.append(item_str)
@@ -256,7 +258,7 @@ class Gnuplot(RawGnuplot):
         result = self(cmd + " " + ", ".join(item_strings), **data_dict)
         # Result should be the empty string if successful.
         if len(result):
-            raise GnuplotError("`%s' returned error" % cmd, result)
+            raise GnuplotError("`{0}' returned error".format(cmd), result)
 
     def plot(self, *items):
         """Issue a `plot' command with the given items.
@@ -320,7 +322,7 @@ class PlotData(object):
         data_str = " source=" + type(self.data).__name__
         options_str = " options=" + repr(self.options) if self.options else ""
         mode_str = " mode=file" if self.mode == "file" else " mode=pipe"
-        return "<PlotData%s%s%s>" % (data_str, options_str, mode_str)
+        return "<PlotData{0}{1}{2}>".format(data_str, options_str, mode_str)
 
 class _OutboundNamedPipe(threading.Thread):
     # Asynchronous manager for named pipe for sending data.
@@ -350,9 +352,13 @@ class _OutboundNamedPipe(threading.Thread):
             with open(self.path, "wb") as pipe:
                 pipe.write(self.data)
             if self.debug:
-                print >>sys.stderr, "<< wrote %d bytes to pipe %s >>" % \
-                        (len(self.data), self.path)
+                msg = "<<wrote {0} bytes to pipe {1}>>".format(len(self.data),
+                                                               self.path)
+                print >>sys.stderr, msg
             if self.debug >= 2:
+                # XXX Check whether the switches to `od' differ for the GNU
+                # version (the ones below work for the BSD version).
+                # (Also below in _OutboundTempFile.)
                 dump = subprocess.Popen(shlex.split("od -A x -t x2"),
                                         stdin=subprocess.PIPE,
                                         stdout=sys.stderr,
@@ -372,9 +378,11 @@ class _OutboundTempFile(object):
         os.write(fd, self.data)
         os.close(fd)
         if self.debug:
-            print >>sys.stderr, "<< wrote %d bytes to tempfile %s >>" % \
-                    (len(self.data), self.path)
+            msg = "<<wrote {0} bytes to tempfile {1}>>".format(len(self.data),
+                                                               self.path)
+            print >>sys.stderr, msg
         if self.debug >= 2:
+            # XXX See above (in _OutboundNamedPipe).
             dump = subprocess.Popen(shlex.split("od -A x -t x2"),
                                     stdin=subprocess.PIPE,
                                     stdout=sys.stderr,

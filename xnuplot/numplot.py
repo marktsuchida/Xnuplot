@@ -72,20 +72,20 @@ def _array_or_record(arr, array_or_record, options,
 
     if a.ndim == 1:
         raise ValueError("array for Gnuplot array/record must have ndim >= 2")
-    shape = ",".join(str(s) for s in reversed(a.shape[:-1]))
+    gnuplot_shape = ",".join(str(s) for s in reversed(a.shape[:-1]))
     count = a.shape[-1]
 
-    dataspec = "%s=(%s)" % (array_or_record, shape)
+    dataspec = "{0}=({1})".format(array_or_record, gnuplot_shape)
     a, format = _gnuplot_array_and_format(a, count)
     byteorder = _gnuplot_byteorder(a.dtype)
-    endian = (None if byteorder == "default" else "endian=%s" % byteorder)
+    endian = (None if byteorder == "default" else "endian=" + byteorder)
 
     if using is not None:
         if numpy.isscalar(using):
             using = (using,)
         if min(using) < 0 or max(using) >= count:
             raise ValueError("`using' specifier is out of bounds")
-        using = "using %s" % ":".join(i + 1 for i in using)
+        using = "using " + ":".join(str(i + 1) for i in using)
 
     options = " ".join(filter(None, ["binary", dataspec, format, endian,
                                      coord_options, using, options]))
@@ -103,9 +103,9 @@ def _gnuplot_array_and_format(a, count=1):
             a = a.astype(numpy.float32)
         typespec = _gnuplot_type_for_dtype(a.dtype)
     if count > 1:
-        format = "format='%%%d%s'" % (count, typespec)
+        format = "format='%{0}{1}'".format(count, typespec)
     else:
-        format = "format='%%%s'" % typespec
+        format = "format='%{0}'".format(typespec)
     return a, format
 
 def _gnuplot_type_for_dtype(numpy_dtype):
@@ -120,7 +120,7 @@ def _gnuplot_type_for_dtype(numpy_dtype):
     elif t == numpy.int64: return "int64"
     elif t == numpy.float32: return "float32"
     elif t == numpy.float64: return "float64"
-    else: raise TypeError("cannot convert %s to Gnuplot type" % str(t))
+    else: raise TypeError("cannot convert {0} to Gnuplot type".format(t))
 
 def _gnuplot_byteorder(numpy_dtype):
     if numpy_dtype.type in (numpy.uint8, numpy.int8): return "default"

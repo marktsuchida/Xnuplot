@@ -92,7 +92,7 @@ class Plot(Gnuplot, _ObservedList):
 
     def __repr__(self):
         classname = self.__class__.__name__
-        return "<%s %s>" % (classname, _ObservedList.__repr__(self))
+        return "<{0} {1}>".format(classname, _ObservedList.__repr__(self))
 
 class SPlot(Plot):
     _plotmethod = Gnuplot.splot
@@ -121,7 +121,7 @@ def load(file, persist=False, autorefresh=True):
     elif data["plot"] == "splot":
         plot = SPlot(**kwargs)
     else:
-        raise FormatError("unknown plot type: %s" % data["plot"])
+        raise FormatError("unknown plot type: {0}".format(data["plot"])
 
     plot.source(data["script"])
     for item in data["items"]:

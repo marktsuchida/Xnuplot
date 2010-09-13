@@ -1,6 +1,4 @@
-import collections
 import contextlib
-import formatter
 import os
 import pexpect
 import re
@@ -269,7 +267,7 @@ class Gnuplot(RawGnuplot):
         """Issue a `plot' command with the given items.
 
         Each item can be a string, a PlotData instance, or a tuple (which is
-        used as the argument list to create a PlotData instance).
+        used as the argument list to construct a PlotData instance).
 
         See also: splot(), replot()
 
@@ -297,68 +295,16 @@ class Gnuplot(RawGnuplot):
         self._plot("replot", *items)
 
     def fit(self, data, expr, via, ranges=None):
-        """Perform a Gnuplot `fit'.
+        """Issue a `fit' command.
 
-        data   - a PlotData instance, or a tuple to be used to construct one.
-        expr   - the Gnuplot expression for the function to fit to.
-        via    - a string (e.g. "a, b"), a tuple (e.g. ("a", "b")), or a dict
-                 with initial parameter values (e.g. dict(a=0.1, b=3.0)).
-        ranges - a string specifying the ranges (passed unmodified to Gnuplot).
-        (Note the different ordering of the arguments from Gnuplot.)
-
-        Returns: (params, errors, log) where params and errors are dicts whose
-                 keys are the parameter names given by the via argument.
+        As with the items in plot(), data can be a PlotData instance or a tuple
+        (which is used as the argument list to construct a PlotData), but not a
+        string.
+        The other arguments (expr, via, and ranges) must be strings.
         """
-        # TODO Support (as kwargs) limit, maxiter, start_lambda, and
-        # lambda_factor.
-
-        # If this is a xnuplot.plot.Plot and set to autorefresh, turn it off
-        # while we perform multiple operations below.
-        autorefresh_suppressed = False
-        if hasattr(self, "autorefresh") and self.autorefresh:
-            self.autorefresh = False
-            autorefresh_suppressed = True
-
-        spec, rawdata = self._datafilespec(data, "fitdata")
-
-        if isinstance(via, basestring):
-            vars = tuple(v.strip() for v in via.split(","))
-        if isinstance(via, collections.Mapping):
-            for var in via:
-                result = self("{0} = {1}".format(var, via[var]))
-                if len(result):
-                    raise GnuplotError("failed to set Gnuplot variable "
-                                       "`{0}' to `{1}'".format(var, via[var]))
-            vars = sorted(via.keys())
-        else:
-            vars = tuple(via)
-
-        self("set fit logfile '/dev/null' errorvariables")
-        log = self("fit {ranges} {expr} {spec} via {vars}".
-                   format(ranges=(ranges or ""),
-                          expr=expr,
-                          spec=spec,
-                          vars=", ".join(vars)),
-                   fitdata=rawdata).strip() + "\n"
-        self("unset fit")
-
-        params = dict()
-        errors = dict()
-        def get_var(name):
-            value = self("print {0}".format(name)).strip()
-            try:
-                return float(value)
-            except:
-                return None
-        for var in vars:
-            params[var] = get_var(var)
-            errors[var] = get_var(var + "_err")
-
-        if autorefresh_suppressed:
-            self.autorefresh = True
-            self.refresh()
-
-        return params, errors, log
+        spec, fitdata = self._datafilespec(data, "fitdata")
+        cmd = " ".join(filter(None, ("fit", ranges, expr, spec, "via", via)))
+        return self(cmd, fitdata=fitdata)
 
     def source(self, script):
         """Issue a `load' command, piping the given script as input."""

@@ -1,5 +1,6 @@
-from .gnuplot import Gnuplot, PlotData as _PlotData
-import cPickle as _pickle
+from .gnuplot import Gnuplot, PlotData
+import collections
+import cPickle as pickle
 
 _MAGIC = "xnuplot-saved-session"
 
@@ -62,6 +63,66 @@ class Plot(Gnuplot, _ObservedList):
         finally:
             self._refreshing = False
 
+    def fit(self, data, expr, via, ranges=None):
+        """Perform a Gnuplot `fit'.
+
+        data   - a PlotData instance, or a tuple to be used to construct one.
+        expr   - the Gnuplot expression for the function to fit to.
+        via    - a string (e.g. "a, b"), a tuple (e.g. ("a", "b")), or a dict
+                 with initial parameter values (e.g. dict(a=0.1, b=3.0)).
+        ranges - a string specifying the ranges (passed unmodified to Gnuplot).
+        (Note the different ordering of the arguments from Gnuplot.)
+
+        Returns: (params, errors, log) where params and errors are dicts whose
+                 keys are the parameter names given by the via argument.
+        """
+        # TODO Support (as kwargs) limit, maxiter, start_lambda, and
+        # lambda_factor.
+
+        # Suppress autorefresh while we execute a number of Gnuplot commands.
+        self._refreshing = True
+        skip_autorefresh = False
+        try:
+            return self._fit(data, expr, via, ranges)
+        except:
+            skip_autorefresh = True
+        finally:
+            self._refreshing = False
+            if not skip_autorefresh and self.autorefresh:
+                self.refresh()
+
+    def _fit(self, data, expr, via, ranges):
+        if isinstance(via, basestring):
+            vars = tuple(v.strip() for v in via.split(","))
+        if isinstance(via, collections.Mapping):
+            for var in via:
+                result = self("{0} = {1}".format(var, via[var]))
+                if len(result):
+                    raise GnuplotError("failed to set Gnuplot variable "
+                                       "`{0}' to `{1}'".format(var, via[var]))
+            vars = sorted(via.keys())
+        else:
+            vars = tuple(via)
+        via = ", ".join(vars)
+
+        self("set fit logfile '/dev/null' errorvariables")
+        log = super(Plot, self).fit(data, expr, via, ranges).strip() + "\n"
+        self("unset fit")
+
+        params = dict()
+        errors = dict()
+        def get_var(name):
+            value = self("print {0}".format(name)).strip()
+            try:
+                return float(value)
+            except:
+                return None
+        for var in vars:
+            params[var] = get_var(var)
+            errors[var] = get_var(var + "_err")
+
+        return params, errors, log
+
     def save(self, file):
         items = []
         for item in self:
@@ -69,7 +130,7 @@ class Plot(Gnuplot, _ObservedList):
                 items.append(item)
             else:
                 if isinstance(item, tuple):
-                    item = _PlotData(*item)
+                    item = PlotData(*item)
                 items.append((item.data, item.options, item.mode))
 
         script = self("save '-'").split("\n")
@@ -85,10 +146,10 @@ class Plot(Gnuplot, _ObservedList):
                 "plot": self._plotcmd, "items": items}
 
         if hasattr(file, "write"):
-            _pickle.dump(data, file)
+            pickle.dump(data, file)
         else:
             with open(file, "wb") as f:
-                _pickle.dump(data, f)
+                pickle.dump(data, f)
 
     def __repr__(self):
         classname = self.__class__.__name__
@@ -102,10 +163,10 @@ class FormatError(Exception): pass
 
 def load(file, persist=False, autorefresh=True):
     if hasattr(file, "read"):
-        data = _pickle.load(file)
+        data = pickle.load(file)
     else:
         with open(file) as f:
-            data = _pickle.load(f)
+            data = pickle.load(f)
 
     try:
         if data["magic"] != _MAGIC:
@@ -128,7 +189,7 @@ def load(file, persist=False, autorefresh=True):
         if isinstance(item, basestring):
             plot.append(item)
         else:
-            plot.append(_PlotData(*item))
+            plot.append(PlotData(*item))
     plot.autorefresh = autorefresh
     if autorefresh:
         plot.refresh()

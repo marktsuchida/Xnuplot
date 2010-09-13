@@ -83,9 +83,17 @@ def _array_or_record(arr, array_or_record, options,
     if using is not None:
         if numpy.isscalar(using):
             using = (using,)
-        if min(using) < 0 or max(using) >= count:
-            raise ValueError("`using' specifier is out of bounds")
-        using = "using " + ":".join(str(i + 1) for i in using)
+        using_items = []
+        for u in using:
+            if isinstance(u, basestring):
+                using_items.append(u)
+            else:
+                if u < 0 or u >= count:
+                    raise ValueError("`using' specifier {0} is out of bounds"
+                                     " (must be positive and less than {1})".
+                                     format(u, count))
+                using_items.append(str(u + 1))
+        using = "using " + ":".join(using_items)
 
     options = " ".join(filter(None, ["binary", dataspec, format, endian,
                                      coord_options, using, options]))

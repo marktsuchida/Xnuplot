@@ -121,7 +121,7 @@ def load(file, persist=False, autorefresh=True):
     elif data["plot"] == "splot":
         plot = SPlot(**kwargs)
     else:
-        raise FormatError("unknown plot type: {0}".format(data["plot"])
+        raise FormatError("unknown plot type: {0}".format(data["plot"]))
 
     plot.source(data["script"])
     for item in data["items"]:

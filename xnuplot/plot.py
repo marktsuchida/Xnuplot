@@ -1,8 +1,11 @@
-from .gnuplot import Gnuplot, PlotData
+from .gnuplot import Gnuplot as _Gnuplot, PlotData, GnuplotError
 import collections
 import cPickle as pickle
 
 _MAGIC = "xnuplot-saved-session"
+
+class FormatError(RuntimeError):
+    """Raised if a saved xnuplot session file has the wrong format."""
 
 class _ObservedList(list):
     # A list that calls self.refresh() upon modification when self.autorefresh
@@ -38,17 +41,17 @@ for name in _ObservedList._modifying_methods:
             _ObservedList._with_autorefresh(getattr(list, name)))
 
 
-class Plot(Gnuplot, _ObservedList):
-    _plotmethod = Gnuplot.plot
+class Plot(_Gnuplot, _ObservedList):
+    _plotmethod = _Gnuplot.plot
     _plotcmd = "plot" # for save()
 
     def __init__(self, autorefresh=True, **kwargs):
         _ObservedList.__init__(self, [])
-        Gnuplot.__init__(self, **kwargs)
+        _Gnuplot.__init__(self, **kwargs)
         self.autorefresh = autorefresh
         self._refreshing = False
 
-    __call__ = _ObservedList._with_autorefresh(Gnuplot.__call__)
+    __call__ = _ObservedList._with_autorefresh(_Gnuplot.__call__)
 
     def refresh(self):
         # Guard against infinite recursion.
@@ -107,8 +110,8 @@ class Plot(Gnuplot, _ObservedList):
             for var in via:
                 result = self("{0} = {1}".format(var, via[var]))
                 if len(result):
-                    raise GnuplotError("failed to set Gnuplot variable "
-                                       "`{0}' to `{1}'".format(var, via[var]))
+                    raise GnuplotError("cannot set Gnuplot variable "
+                                       "`{0}' to `{1}'". format(var, via[var]))
             vars = sorted(via.keys())
         else:
             vars = tuple(via)
@@ -170,10 +173,9 @@ class Plot(Gnuplot, _ObservedList):
         return "<{0} {1}>".format(classname, _ObservedList.__repr__(self))
 
 class SPlot(Plot):
-    _plotmethod = Gnuplot.splot
+    _plotmethod = _Gnuplot.splot
     _plotcmd = "splot" # for save()
 
-class FormatError(Exception): pass
 
 def load(file, persist=False, autorefresh=True):
     if hasattr(file, "read"):
@@ -183,8 +185,7 @@ def load(file, persist=False, autorefresh=True):
             data = pickle.load(f)
 
     try:
-        if data["magic"] != _MAGIC:
-            raise Exception()
+        assert data["magic"] == _MAGIC
     except:
         raise FormatError("does not appear to be an xnuplot session file")
     if data["version"] > 0:

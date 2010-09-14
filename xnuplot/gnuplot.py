@@ -14,7 +14,7 @@ class CommunicationError(RuntimeError):
     """Raised when communication with Gnuplot subprocess failed."""
 
 class GnuplotError(RuntimeError):
-    """Raised when Gnuplot returns a (known) error."""
+    """Raised when Gnuplot (is known to have) responded with an error."""
 
 class RawGnuplot(object):
     """Low-level manager for communication with a Gnuplot subprocess."""
@@ -261,7 +261,9 @@ class Gnuplot(RawGnuplot):
         result = self(cmd + " " + ", ".join(item_strings), **data_dict)
         # Result should be the empty string if successful.
         if len(result):
-            raise GnuplotError("`{0}' returned error".format(cmd), result)
+            # Remove Gnuplot's syntax error pointer.
+            msg = result.strip().lstrip("^").strip()
+            raise GnuplotError("`{0}' returned error".format(cmd), msg)
 
     def plot(self, *items):
         """Issue a `plot' command with the given items.

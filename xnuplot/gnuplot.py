@@ -9,6 +9,10 @@ import sys
 import tempfile
 import threading
 import warnings
+import weakref
+
+# A list of weakrefs to all plots ever created.
+_allplots = []
 
 class CommunicationError(RuntimeError):
     """Raised when communication with Gnuplot subprocess failed."""
@@ -53,6 +57,8 @@ class RawGnuplot(object):
         finally:
             if not ok:
                 self.terminate()
+        global _allplots
+        _allplots.append(weakref.ref(self))
 
     def __enter__(self):
         return self
@@ -413,4 +419,11 @@ class _OutboundTempFile(object):
         if self.path:
             os.unlink(self.path)
             self.path = None
+
+def closeall():
+    global _allplots
+    for ref in _allplots:
+        plot = ref()
+        if plot:
+            plot.close()
 

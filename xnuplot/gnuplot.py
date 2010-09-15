@@ -25,11 +25,13 @@ class RawGnuplot(object):
 
     gp_prompt = "gnuplot> "
 
-    def __init__(self, command="gnuplot", persist=False, tempdir=None):
+    def __init__(self, command=None, persist=False, tempdir=None):
         """Return a new Gnuplot object.
 
         Keyword Arguments:
-        command - The command to use to invoke Gnuplot.
+        command - The command used to invoke Gnuplot. Defaults to `gnuplot',
+                  unless the environment variable XNUPLOT_GNUPLOT is defined,
+                  in which case its value is used.
         persist - Whether the plot window should stay open after this object
                   (and hence the Gnuplot subprocess) is destroyed.
         tempdir - Directory to use for temporary data. A new directory is
@@ -38,6 +40,13 @@ class RawGnuplot(object):
         """
         self._debug = False
         self.tempdir = tempfile.mkdtemp(prefix="xnuplot.", dir=tempdir)
+
+        if not command:
+            if "XNUPLOT_GNUPLOT" in os.environ:
+                command = os.environ["XNUPLOT_GNUPLOT"]
+            else:
+                command = "gnuplot"
+
         if persist:
             command += " -persist"
         try:
@@ -46,6 +55,7 @@ class RawGnuplot(object):
         except:
             os.rmdir(self.tempdir)
             raise
+
         ok = False
         try:
             self.gp_proc.expect_exact(self.gp_prompt)
@@ -57,6 +67,7 @@ class RawGnuplot(object):
         finally:
             if not ok:
                 self.terminate()
+
         global _allplots
         _allplots.append(weakref.ref(self))
 

@@ -316,6 +316,8 @@ class Gnuplot(RawGnuplot):
 
 class PlotData(object):
     """Wrapper for a data item in a Gnuplot `plot' or `splot' command."""
+    __slots__ = ("data", "options", "mode")
+
     def __init__(self, data, options=None, mode=None):
         """Initialize a PlotData object.
 
@@ -335,6 +337,7 @@ class PlotData(object):
         if mode not in ("pipe", "file"):
             raise ValueError('PlotData mode must be either "pipe" or "file"')
         self.mode = mode
+
     def __repr__(self):
         data_str = " source=" + type(self.data).__name__
         options_str = " options=" + repr(self.options) if self.options else ""

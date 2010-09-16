@@ -25,7 +25,8 @@ class RawGnuplot(object):
 
     gp_prompt = "gnuplot> "
 
-    def __init__(self, command=None, persist=False, tempdir=None):
+    def __init__(self, command=None, persist=False, tempdir=None,
+                 testecho=False):
         """Return a new Gnuplot object.
 
         Keyword Arguments:
@@ -37,6 +38,10 @@ class RawGnuplot(object):
         tempdir - Directory to use for temporary data. A new directory is
                   created within the given directory, whose name is stored in
                   self.tempdir.
+        testecho - Check to see if the assumptions we make about how Gnuplot
+                   echoes commands are correct. Try setting this to True if
+                   you suspect xnuplot is not properly communicating with
+                   Gnuplot.
         """
         self._debug = False
         self.tempdir = tempfile.mkdtemp(prefix="xnuplot.", dir=tempdir)
@@ -67,6 +72,9 @@ class RawGnuplot(object):
         finally:
             if not ok:
                 self.terminate()
+
+        if testecho:
+            self._test_readline_echo()
 
         global _allplots
         _allplots.append(weakref.ref(self))
@@ -164,15 +172,7 @@ class RawGnuplot(object):
         with self._placeholders_substituted(command, **data) as command:
             self.gp_proc.sendline(command)
             try:
-                # If Gnuplot is compiled with GNU readline support, we get the
-                # echoed command string (this is true even if echoing is turned
-                # off for the terminal). This string is wrapped with CRs, but
-                # it is terminated by a CRLF. So discard everything up to the
-                # first CRLF. This may need to be tweaked if Gnuplot was built
-                # without GNU readline, built with Mac OS X's native non-GNU
-                # libedit, or built on other systems. Ideally, this would be
-                # done at build time by some sort of automatic detection
-                # scheme.
+                # Skip over the echoed command (see _test_readline_echo()).
                 self.gp_proc.expect_exact("\r\n")
                 self.gp_proc.expect_exact(self.gp_prompt)
             except pexpect.EOF:
@@ -190,6 +190,60 @@ class RawGnuplot(object):
                 raise CommunicationError("timeout")
         result = self.gp_proc.before
         return result.replace("\r\n", "\n")
+
+    def _test_readline_echo(self):
+        # Determine how Gnuplot echoes the command. If Gnuplot is built without
+        # readline support, it will simply let the tty do the echo. However, if
+        # built with readline support (builtin, GNU readline, or BSD libedit),
+        # then it will turn off the tty echo and echo each input character on
+        # its own. Thus, we expect to receive an echo regardless of what
+        # gp_proc.getecho() reports.
+        #
+        # To further complicate matters, GNU readline and BSD libedit insert
+        # control characters into the echoed text, in an attempt to move the
+        # cursor to the beginning of the next line whenever a character is
+        # entered in what would be the rightmost column of a real terminal.
+        # This causes us to see the sequence " \r" (GNU) or " \b" (BSD) every
+        # 80 characters (or whatever the width of the tty), at least with the
+        # versions I've tested (Gnuplot's builtin readline does not insert any
+        # extra characters). The exact behavior may also depend on the
+        # particular terminal in use.
+        #
+        # Fortunately, we can still just skip over to the first "\r\n" in
+        # all of the known cases. We just make sure here that these assumptions
+        # hold.
+
+        unknown_behavior_msg = ("Gnuplot is echoing commands in an unexpected "
+                                "fashion. Xnuplot does not (yet) know how to "
+                                "handle this. Please file a bug report. ")
+        # First, test a single-character command line.
+        self.gp_proc.sendline("#")
+        self.gp_proc.expect_exact(self.gp_prompt)
+        echo = self.gp_proc.before
+        if echo != "#\r\n":
+            raise CommunicationError(unknown_behavior_msg +
+                                     "(\"#\" -> \"{0}\")".format(repr(echo)))
+        # Second, test a command line long enough to be wrapped.
+        rows, cols = self.gp_proc.getwinsize()
+        test_cmd = "#" * (cols * 3)
+        self.gp_proc.sendline(test_cmd)
+        self.gp_proc.expect_exact(self.gp_prompt)
+        echo = self.gp_proc.before[:-2] # Remove trailing "\r\n".
+        if echo == test_cmd:
+            # Okay: exact echo.
+            return
+        breaks = filter(None, echo.split("#"))
+        for b in breaks[1:]:
+            if b != breaks[0]:
+                raise CommunicationError(unknown_behavior_msg +
+                                         "(nonuniform linebreaks)")
+        if "\r\n" in breaks[0]:
+            raise CommunicationError(unknown_behavior_msg +
+                                     "(extra CRLFs inserted)")
+        else:
+            # Okay: whatever is inserted into the echo, it does not contain
+            # the "\r\n" sequence.
+            return
 
     def interact(self):
         """Interact directly with the Gnuplot subprocess.

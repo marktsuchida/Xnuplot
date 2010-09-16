@@ -447,9 +447,6 @@ class _OutboundNamedPipe(threading.Thread):
                                                                self.path)
                 print >>sys.stderr, msg
             if self.debug >= 2:
-                # XXX Check whether the switches to `od' differ for the GNU
-                # version (the ones below work for the BSD version).
-                # (Also below in _OutboundTempFile.)
                 dump = subprocess.Popen(shlex.split("od -A x -t x2"),
                                         stdin=subprocess.PIPE,
                                         stdout=sys.stderr,
@@ -473,7 +470,6 @@ class _OutboundTempFile(object):
                                                                self.path)
             print >>sys.stderr, msg
         if self.debug >= 2:
-            # XXX See above (in _OutboundNamedPipe).
             dump = subprocess.Popen(shlex.split("od -A x -t x2"),
                                     stdin=subprocess.PIPE,
                                     stdout=sys.stderr,

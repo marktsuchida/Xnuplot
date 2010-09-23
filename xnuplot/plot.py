@@ -45,10 +45,11 @@ class Plot(_Gnuplot, _ObservedList):
     _plotmethod = _Gnuplot.plot
     _plotcmd = "plot" # for save()
 
-    def __init__(self, autorefresh=True, **kwargs):
+    def __init__(self, autorefresh=True, description=None, **kwargs):
         _ObservedList.__init__(self, [])
         _Gnuplot.__init__(self, **kwargs)
         self.autorefresh = autorefresh
+        self.description = description
         self._refreshing = False
 
     __call__ = _ObservedList._with_autorefresh(_Gnuplot.__call__)
@@ -159,6 +160,7 @@ class Plot(_Gnuplot, _ObservedList):
         script = "\n".join(script)
 
         data = {"magic": _MAGIC, "version": 0,
+                "description": self.description,
                 "script": script,
                 "plot": self._plotcmd, "items": items}
 
@@ -191,7 +193,8 @@ def load(file, persist=False, autorefresh=True):
     if data["version"] > 0:
         raise FormatError("file saved by a newer version of xnuplot")
 
-    kwargs = dict(persist=persist, autorefresh=False)
+    kwargs = dict(persist=persist, autorefresh=False,
+                  description=data.get("description"))
     if data["plot"] == "plot":
         plot = Plot(**kwargs)
     elif data["plot"] == "splot":

@@ -42,7 +42,7 @@ for filename in args:
     if len(args) > 1:
         print "[%s]" % filename
 
-    plot = xnuplot.load(filename, persist=options.persist, autorefresh=True)
+    plot = xnuplot.load(filename, persist=options.persist, autorefresh=False)
     if options.terminal is not None:
         plot("set terminal %s" % options.terminal)
     if options.output is not None:

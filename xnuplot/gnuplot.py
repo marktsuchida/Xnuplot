@@ -175,21 +175,57 @@ class RawGnuplot(object):
                 # Skip over the echoed command (see _test_readline_echo()).
                 self.gp_proc.expect_exact("\r\n")
                 self.gp_proc.expect_exact(self.gp_prompt)
+                result = self.gp_proc.before
+                return result.replace("\r\n", "\n")
             except pexpect.EOF:
-                if self.gp_proc.isalive():
-                    warnings.warn("killing potentially zombie Gnuplot process")
                 self.terminate()
                 if re.match(r"\s*(quit|exit)(\W|$)", command):
                     return None
                 else:
                     raise CommunicationError("Gnuplot died")
             except pexpect.TIMEOUT:
-                if self.gp_proc.isalive():
-                    warnings.warn("killing potentially hanged Gnuplot process")
                 self.terminate()
                 raise CommunicationError("timeout")
-        result = self.gp_proc.before
-        return result.replace("\r\n", "\n")
+
+    def _send_one_command_with_extra_newline(self, command):
+        # At least with the tested build of Gnuplot 4.4.0 on Mac OS X, closing
+        # the window does not cause `pause mouse close' to immediately return. 
+        # Sending an extra newline appears to get around the block, so here is
+        # a special workaround.
+        self.gp_proc.sendline(command)
+        self.gp_proc.sendline("")
+        try:
+            # Skip over the echoed command (see _test_readline_echo()).
+            self.gp_proc.expect_exact("\r\n")
+            self.gp_proc.expect_exact(self.gp_prompt)
+            result = self.gp_proc.before
+            self.gp_proc.expect_exact(self.gp_prompt)
+            return result.replace("\r\n", "\n")
+        except pexpect.EOF:
+            self.terminate()
+            if re.match(r"\s*(quit|exit)(\W|$)", command):
+                return None
+            else:
+                raise CommunicationError("Gnuplot died")
+        except pexpect.TIMEOUT:
+            self.terminate()
+            raise CommunicationError("timeout")
+
+    def pause(self, *params):
+        command = " ".join(("pause",) + params)
+        if len(params) and params[0].startswith("mouse"):
+            sender = self._send_one_command_with_extra_newline
+        else:
+            sender = self._send_one_command
+
+        # Temporarily disable the timeout for a `pause' command.
+        save_timeout = self.timeout
+        try:
+            self.timeout = None
+            sender(command)
+        finally:
+            if self.isalive():
+                self.timeout = save_timeout
 
     def _test_readline_echo(self):
         # Determine how Gnuplot echoes the command. If Gnuplot is built without

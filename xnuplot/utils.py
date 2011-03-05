@@ -79,10 +79,15 @@ def _get_range_settings(plot, axis, system):
     setting = (range_min, range_max)
     reversed = match.group(3) != "no"
 
-    name = axis.upper() + ("2" if int(system) == 2 else "")
-    current_min = get_var(plot, "GPVAL_%s_MIN" % name, float)
-    current_max = get_var(plot, "GPVAL_%s_MAX" % name, float)
-    current = (current_min, current_max)
+    if None not in setting:
+        # The GPVAL_ vars don't reflect Button-3 zoomed ranges, so use the
+        # non-auto ranges if set.
+        current = (setting if not reversed else (setting[1], setting[0]))
+    else:
+        name = axis.upper() + ("2" if int(system) == 2 else "")
+        current_min = get_var(plot, "GPVAL_%s_MIN" % name, float)
+        current_max = get_var(plot, "GPVAL_%s_MAX" % name, float)
+        current = (current_min, current_max)
 
     return dict(setting=setting, reversed=reversed, current=current)
 

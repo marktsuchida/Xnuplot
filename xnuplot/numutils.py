@@ -43,7 +43,7 @@ def adjust_for_image(plot, image, axes=None, cliprect=None, adjust_ranges=True,
             image_max = str(image_max) if image_max is not None else "*"
             plot2("set cbrange [%s:%s]" % (image_min, image_max))
         if adjust_layout:
-            plot2("set key outside")
+            plot2("set key tmargin")
     if plot.autorefresh:
         plot.refresh()
 

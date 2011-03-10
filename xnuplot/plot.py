@@ -4,7 +4,7 @@ import cPickle as pickle
 
 _MAGIC = "xnuplot-saved-session"
 
-class FormatError(RuntimeError):
+class FileFormatError(RuntimeError):
     """Raised if a saved xnuplot session file has the wrong format."""
 
 class _ObservedList(list):
@@ -69,27 +69,6 @@ class Plot(_Gnuplot, _ObservedList):
 
     def fit(self, data, expr, via, ranges=None,
             limit=None, maxiter=None, start_lambda=None, lambda_factor=None):
-        """Perform a Gnuplot `fit'.
-
-        data          - a PlotData instance, or a tuple to be used to construct
-                        one
-        expr          - the Gnuplot expression for the function to fit to
-        via           - a string (e.g. "a, b"), a tuple (e.g. ("a", "b")), or a
-                        dict with initial parameter values (e.g. dict(a=0.1,
-                        b=3.0))
-        ranges        - a string specifying the ranges (passed unmodified to
-                        Gnuplot)
-        limit         - set Gnuplot's FIT_LIMIT
-        maxiter       - set Gnuplot's FIT_MAXITER
-        start_lambda  - set Gnuplot's FIT_START_LAMBDA
-        lambda_factor - set Gnuplot's FIT_LAMBDA_FACTOR
-
-        Returns: (params, errors, log) where params and errors are dicts whose
-                 keys are the parameter names given by the via argument.
-        """
-        # TODO Support (as kwargs) limit, maxiter, start_lambda, and
-        # lambda_factor.
-
         # Suppress autorefresh while we execute a number of Gnuplot commands.
         self._refreshing = True
         skip_autorefresh = False

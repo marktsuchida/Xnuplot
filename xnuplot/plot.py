@@ -158,7 +158,7 @@ class SPlot(Plot):
     _plotcmd = "splot" # for save()
 
 
-def load(file, persist=False, autorefresh=True):
+def load(file, persist=False, autorefresh=True, class_=None):
     if hasattr(file, "read"):
         data = pickle.load(file)
     else:
@@ -174,12 +174,18 @@ def load(file, persist=False, autorefresh=True):
 
     kwargs = dict(persist=persist, autorefresh=False,
                   description=data.get("description"))
-    if data["plot"] == "plot":
-        plot = Plot(**kwargs)
-    elif data["plot"] == "splot":
-        plot = SPlot(**kwargs)
-    else:
-        raise FormatError("unknown plot type: {0}".format(data["plot"]))
+    if class_ is None:
+        if data["plot"] == "plot":
+            class_ = Plot
+        elif data["plot"] == "splot":
+            class_ = SPlot
+        else:
+            raise FormatError("unknown plot type: {0}".format(data["plot"]))
+    elif class_._plotcmd != data["plot"]:
+        raise TypeError("specified class (%s) does not match plot type (%s) "
+                        "of file (%s)" % (class_.__name__, data["plot"],
+                                          str(file)))
+    plot = class_(**kwargs)
 
     plot.source(data["script"])
     for item in data["items"]:

@@ -200,7 +200,7 @@ Modules:
    plotted using Gnuplot's ``splot`` command instead of the ``plot`` command.
 
 
-.. function:: load(file[, autorefresh=True, persist=False])
+.. function:: load(file[, autorefresh=True, persist=False, class_=None])
 
    Load a plot archived by the :meth:`Plot.save` or :meth:`SPlot.save` method.
 
@@ -215,12 +215,12 @@ Modules:
                       Gnuplot quits (*i.e.* after the :class:`Plot` object is
                       deleted)
 
-   :rtype: :class:`Plot` or :class:`SPlot`, depending on the plot contained in
-           *file*
+   :arg class class\_: the class to use for the returned plot object (defaults
+                      to :class:`xnuplot.Plot` or :class:`xnuplot.SPlot`,
+                      depending on the plot contained in *file*)
 
-   :raises: :exc:`xnuplot.plot.FileFormatError` if *file* is not in the expected
-            format
-
+   The *class_* argument is useful if, for example, you want to load a saved
+   plot as a :class:`numplot.Plot` object.
 
 .. function:: closeall()
 

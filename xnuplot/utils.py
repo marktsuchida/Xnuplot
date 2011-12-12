@@ -3,11 +3,9 @@ import sys
 import contextlib
 
 
-# TODO Allow using different coordinates for x and y (e.g. x1y2).
-
-
 @contextlib.contextmanager
 def no_autorefresh(plot):
+    """A `with' statement context manager to switch off autorefresh."""
     if hasattr(plot, "autorefresh"):
         saveautorefresh = plot.autorefresh
         plot.autorefresh = False
@@ -20,6 +18,7 @@ def no_autorefresh(plot):
 
 _getvar_pattern = re.compile("GETVAR_LEFT (.*) GETVAR_RIGHT")
 def get_var(plot, varname, type_=str):
+    """Get the value of a Gnuplot variable from plot."""
     with no_autorefresh(plot) as plot2:
         result = plot2("print \"GETVAR_LEFT \", %s, \" GETVAR_RIGHT\"" %
                        varname)
@@ -31,10 +30,18 @@ def get_var(plot, varname, type_=str):
         return type_(value)
 
 
-def _scale(plot, coord, axis, from_system):
-    to_system = str(2 - int(from_system))
-    from_name = axis.upper() + ("2" if int(from_system) == 2 else "")
-    to_name = axis.upper() + ("2" if int(to_system) == 2 else "")
+def convert_coord(plot, axis, to_system, coord):
+    """Convert coord from one system to the other.
+
+    The axis ranges are taken from the last plot, not necessarily the current
+    settings.
+
+    convert_coord(plot, "x", 2, x1) -> x2
+    """
+    to_system = int(to_system)
+    from_system = 2 - to_system
+    from_name = axis.upper() + ("2" if from_system == 2 else "")
+    to_name = axis.upper() + ("2" if to_system == 2 else "")
     from_min = get_var(plot, "GPVAL_%s_MIN" % from_name, float)
     from_max = get_var(plot, "GPVAL_%s_MAX" % from_name, float)
     to_min = get_var(plot, "GPVAL_%s_MIN" % to_name, float)
@@ -46,18 +53,43 @@ def _scale(plot, coord, axis, from_system):
         return None
 
 
-def first_to_second(plot, x1, y1):
-    # Convert based on the last plot, not the current settings.
-    x2 = _scale(plot, x1, "x", 1)
-    y2 = _scale(plot, y1, "y", 1)
-    return x2, y2
+def _convert_given_coord(plot, axis, to_sys, c1=None, c2=None):
+    # Subroutine for convert_coords() below.
+    if to_sys is not None:
+        given = (c1 is not None, c2 is not None)
+        if given == (True, False):
+            from_sys = 1
+            c = c1
+        elif given == (False, True):
+            from_sys = 2
+            c = c2
+        else:
+            raise ValueError("exactly one of %s1, %s2 must be given" %
+                             (axis, axis))
+        if int(to_sys) == from_sys:
+            return c
+        else:
+            return convert_coord(plot, axis, to_sys, c)
 
 
-def second_to_first(plot, x2, y2):
-    # Convert based on the last plot, not the current settings.
-    x1 = _scale(plot, x2, "x", 2)
-    y1 = _scale(plot, y2, "y", 2)
-    return x1, y1
+_axes_pattern = re.compile("^(x([12]))?(y([12]))?$")
+def convert_coords(plot, to_axes, x1=None, y1=None, x2=None, y2=None):
+    """Convert coordinates between the first and second systems.
+
+    The axis ranges are taken from the last plot, not necessarily the current
+    settings.
+
+    convert_coords(plot, "y2", y1=y1) -> y2
+    convert_coords(plot, "x1y2", x1=x1, y1=y1) -> (x1, y2)
+    """
+    to_x_sys, to_y_sys = _axes_pattern.match(to_axes).group(2, 4)
+    to_x = _convert_given_coord(plot, "x", to_x_sys, c1=x1, c2=x2)
+    to_y = _convert_given_coord(plot, "y", to_y_sys, c1=y1, c2=y2)
+    ret = filter(None, (to_x, to_y))
+    if len(ret) == 2:
+        return ret
+    elif len(ret) == 1:
+        return ret[0]
 
 
 def get_range_settings(plot, axis, system=1):
@@ -105,16 +137,19 @@ def set_range(plot, axis, system, range, reverse=False, writeback=None):
                                 reverse, writeback])))
 
 
+# TODO Events should probably be instances of their own class, rather than
+# just a dict.
+
 def get_last_event(plot):
     with no_autorefresh(plot) as plot2:
         return _get_last_event(plot2)
 
 def _get_last_event(plot):
     event = dict(button=get_var(plot, "MOUSE_BUTTON", int),
-                 coord1=(get_var(plot, "MOUSE_X", float),
-                         get_var(plot, "MOUSE_Y", float)),
-                 coord2=(get_var(plot, "MOUSE_X2", float),
-                         get_var(plot, "MOUSE_Y2", float)),
+                 x1=get_var(plot, "MOUSE_X", float),
+                 y1=get_var(plot, "MOUSE_Y", float),
+                 x2=get_var(plot, "MOUSE_X2", float),
+                 y2=get_var(plot, "MOUSE_Y2", float),
                  shift=bool(get_var(plot, "MOUSE_SHIFT", int)),
                  ctrl=bool(get_var(plot, "MOUSE_CTRL", int)),
                  alt=bool(get_var(plot, "MOUSE_ALT", int)),
@@ -130,15 +165,16 @@ def _get_last_event(plot):
     return event
 
 
-def get_interactive_event(plot, callback=None):
+def wait_for_event(plot, callback=None):
     with no_autorefresh(plot) as plot2:
-        return _get_interactive_event(plot2, callback)
+        return _wait_for_event(plot2, callback)
 
-def _get_interactive_event(plot, callback):
+def _wait_for_event(plot, callback):
     should_continue = True
     while should_continue:
         plot.pause("mouse", "any")
         event = get_last_event(plot)
+
         should_continue = False
         if callback is not None:
             should_continue = callback(event)
@@ -146,22 +182,30 @@ def _get_interactive_event(plot, callback):
             should_continue = False
     return event
 
+_full_axes_pattern = re.compile("^x[12]y[12]$")
+def _coord_keys(axes):
+    # Return e.g. ("x1", "y2") given "x1y2".
+    if not _full_axes_pattern.match(axes):
+        raise ValueError("invalid axes specifier: " + axes)
+    x_coord, y_coord = axes[:2], axes[2:]
+    return (x_coord, y_coord)
 
-def get_line_segment(plot, system=1):
+def get_line_segment(plot, axes="x1y1"):
     with no_autorefresh(plot) as plot2:
-        return _get_line_segment(plot2, system)
+        return _get_line_segment(plot2, axes)
 
-def _get_line_segment(plot, system):
+def _get_line_segment(plot, axes):
+    x_coord, y_coord = _coord_keys(axes)
     points = []
     def action(event):
         if event["event_type"] == "click" and event["button"] == 1:
             if len(points) == 0:
-                points.append(event["coord1" if system == 1 else "coord2"])
+                points.append((event[x_coord], event[y_coord]))
                 plot("set mouse ruler at %f,%f polardistance" %
-                     event["coord1"])
+                     (event["x1"], event["y1"]))
                 return True
             elif len(points) == 1:
-                points.append(event["coord1" if system == 1 else "coord2"])
+                points.append((event[x_coord], event[y_coord]))
                 return False
         elif event["event_type"] == "key" and event["ascii"] == 27: # Esc.
             if len(points) == 0:
@@ -173,23 +217,25 @@ def _get_line_segment(plot, system):
                 plot("set mouse noruler")
                 return True
         return True
-    get_interactive_event(plot, action)
+    wait_for_event(plot, action)
     plot("set mouse noruler nopolardistance")
     if len(points) < 2:
         return None
     return tuple(points)
 
 
-def get_polyline(plot, system=1, vertex_callback=None):
+def get_polyline(plot, axes="x1y1", vertex_callback=None):
     with no_autorefresh(plot) as plot2:
-        return _get_polyline(plot2, system, vertex_callback)
+        return _get_polyline(plot2, axes, vertex_callback)
 
-def _get_polyline(plot, system, vertex_callback):
+def _get_polyline(plot, axes, vertex_callback):
+    x_coord, y_coord = _coord_keys(axes)
     points = []
     def action(event):
         if event["event_type"] == "click":
-            points.append(event["coord1" if system == 1 else "coord2"])
-            plot("set mouse ruler at %f,%f polardistance" % event["coord1"])
+            points.append((event[x_coord], event[y_coord]))
+            plot("set mouse ruler at %f,%f polardistance" %
+                 (event["x1"], event["y1"]))
             if vertex_callback is not None:
                 vertex_callback(points)
             if event["button"] == 3:
@@ -203,8 +249,9 @@ def _get_polyline(plot, system, vertex_callback):
                     if vertex_callback is not None:
                         vertex_callback(points)
                     if len(points):
-                        coord = (points[-1] if system == 1 else
-                                 second_to_first(plot, points[-1]))
+                        coord = convert_coords(plot, "x1y1",
+                                               **{x_coord: points[-1][0],
+                                                  y_coord: points[-1][1]})
                         plot("set mouse ruler at %f,%f" % coord)
                     else:
                         plot("set mouse noruler")
@@ -216,33 +263,34 @@ def _get_polyline(plot, system, vertex_callback):
             elif event["ascii"] == 13: # Return.
                 return False
         return True
-    last_event = get_interactive_event(plot, action)
+    event = wait_for_event(plot, action)
     plot("set mouse noruler nopolardistance")
     if len(points) and points[0] is None: # Cancelled.
         return None
-    if last_event["event_type"] == "abnormal":
+    if event["event_type"] == "abnormal":
         return None
     return points
 
 
-def input_polyline(plot, system=1, with_="lines", leave_polyline=True,
+def input_polyline(plot, axes="x1y1", with_="lines", leave_polyline=True,
                    close_polygon=False):
     if not isinstance(plot, list) or not hasattr(plot, "refresh"):
         raise ValueError("plot must be an xnuplot.Plot instance")
     with no_autorefresh(plot) as plot2:
-        return _input_polyline(plot2, system, with_, leave_polyline,
+        return _input_polyline(plot2, axes, with_, leave_polyline,
                                close_polygon)
 
-def _input_polyline(plot, system, with_, leave_polyline, close_polygon):
+def _input_polyline(plot, axes, with_, leave_polyline, close_polygon):
+    x_coord, y_coord = _coord_keys(axes)
     # We need to freeze the plot range so that it doesn't change.
-    xrange = get_range_settings(plot, "x", system=system)
-    yrange = get_range_settings(plot, "y", system=system)
-    set_range(plot, "x", system, xrange["current"])
-    set_range(plot, "y", system, yrange["current"])
+    xrange = get_range_settings(plot, "x", system=x_coord[1])
+    yrange = get_range_settings(plot, "y", system=y_coord[1])
+    set_range(plot, "x", x_coord[1], xrange["current"])
+    set_range(plot, "y", y_coord[1], yrange["current"])
     with_spec = ("with " + with_ if with_ else None)
 
     showing_polyline = [False]
-    plot_options = " ".join(filter(None, ["axes x%dy%d" % (system, system),
+    plot_options = " ".join(filter(None, ["axes %s%s" % (x_coord, y_coord),
                                           "notitle",
                                           with_spec]))
 
@@ -265,7 +313,7 @@ def _input_polyline(plot, system, with_, leave_polyline, close_polygon):
         if changed:
             plot.refresh()
 
-    vertices = get_polyline(plot, system, vertices_changed)
+    vertices = get_polyline(plot, axes, vertices_changed)
 
     changed = False
     if showing_polyline[0] and (close_polygon or not leave_polyline):
@@ -280,9 +328,9 @@ def _input_polyline(plot, system, with_, leave_polyline, close_polygon):
         changed = True
     if not leave_polyline:
         # Restore axis range settings.
-        set_range(plot, "x", system,
+        set_range(plot, "x", x_coord[1],
                   xrange["setting"], reversed=xrange["reversed"])
-        set_range(plot, "y", system,
+        set_range(plot, "y", y_coord[1],
                   yrange["setting"], reversed=yrange["reversed"])
         changed = True
     if changed:

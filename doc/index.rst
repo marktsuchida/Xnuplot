@@ -24,6 +24,9 @@ the code for some advanced features. Parts of the code (the
 :mod:`xnuplot.utils` and :mod:`xnuplot.numutils` modules) are experimental, so
 expect changes to the API.
 
+Xnuplot has so far only been tested in a very specific environment (Mac OS X
+and Gnuplot 4.4.0). Bug reports and other feedback would be highly appreciated.
+
 
 Quick introduction
 ------------------
@@ -133,7 +136,8 @@ Prerequisites
 - Python 2.6 or 2.7 (not Python 3+)
 - Gnuplot 4.4 or above
 - Pexpect (tested with version 2.3)
-- A UNIX operating system (Xnuplot is developed and tested on Mac OS X)
+- A UNIX operating system on which Pexpected works properly (Xnuplot is
+  currently developed and tested on Mac OS X)
 
 
 Documentation

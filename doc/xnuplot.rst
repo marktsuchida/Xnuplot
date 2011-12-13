@@ -10,6 +10,8 @@ Modules:
 
    gnuplot
    numplot
+   utils
+   numutils
 
 .. class:: Plot([autorefresh=True, persist=False, description=None, kwargs...])
 

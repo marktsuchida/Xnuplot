@@ -3,48 +3,13 @@ from . import Plot as _Plot, SPlot as _SPlot
 import numpy
 
 def array(arr, options=None, coord_options=None, using=None):
-    """Return a plot item in `binary array' format.
-
-    arr must be ndim >= 2, and the last dimension corresponds to the `using'
-    items (e.g. if arr.shape[-1] == 3, you can use `using=(1, 0, 2)').
-
-    options       - Gnuplot plotting options (axes, title, with)
-    coord_options - Gnuplot `binary array' coordinate generation options (dx,
-                    dy, dz, flipz, flipy, flipz, origin, center, rotate,
-                    perpendicular)
-    using         - tuple specifying the Gnuplot `using' list, but with
-                    zero-based indexing (along the last axis of arr)
-
-    The returned object can be added to instances of xnuplot.plot.[S]Plot or
-    xnuplot.numplot.[S]Plot, or can be used as an argument to the plot(),
-    splot(), and replot() methods of xnuplot.gnuplot.Gnuplot,
-    """
     return _array_or_record(arr, "array", options,
                             coord_options=coord_options, using=using)
 
 def record(arr, options=None, using=None):
-    """Return a plot item in `binary record' format.
-
-    arr must be ndim >= 2, and the last dimension corresponds to the `using'
-    items (e.g. if arr.shape[-1] == 3, you can use `using=(1, 0, 2)').
-
-    options       - Gnuplot plotting options (axes, title, with)
-    using         - tuple specifying the Gnuplot `using' list, but with
-                    zero-based indexing (along the last axis of arr)
-
-    The returned object can be added to instances of xnuplot.plot.[S]Plot or
-    xnuplot.numplot.[S]Plot, or can be used as an argument to the plot(),
-    splot(), and replot() methods of xnuplot.gnuplot.Gnuplot,
-    """
     return _array_or_record(arr, "record", options, using=using)
 
 def matrix(arr, xcoords, ycoords, options=None):
-    """Return a plot item in `binary matrix' format.
-
-    The returned object can be added to instances of xnuplot.plot.[S]Plot or
-    xnuplot.numplot.[S]Plot, or can be used as an argument to the plot(),
-    splot(), and replot() methods of xnuplot.gnuplot.Gnuplot,
-    """
     a = numpy.asarray(arr)
     if a.ndim != 2:
         raise ValueError("array for Gnuplot matrix must have ndim == 2")

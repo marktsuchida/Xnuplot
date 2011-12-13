@@ -1,7 +1,7 @@
 Xnuplot
 =======
 
-**Xnuplot** ("ex-new-plot") is a Python package to drive the interactive
+**Xnuplot** ("ex-new-plot") is a Python package for driving the interactive
 plotting program Gnuplot_. It uses Noah Spurrier's Pexpect_ module for
 communication with Gnuplot (hence the name *Xnuplot*), and can efficiently pipe
 text as well as binary data, including data contained in NumPy_ arrays, to
@@ -11,41 +11,50 @@ Gnuplot.
 .. _Pexpect: http://www.noah.org/wiki/pexpect
 .. _NumPy: http://numpy.scipy.org/
 
-Because Pexpect only supports UNIX platforms, Xnuplot does not currently run on
-Windows (try the Gnuplot.py_ module, which is cross-platform).
+Currently, Xnuplot only works on UNIX platforms, where Pexpect runs. I expect
+that it will be possible to port Xnuplot to Windows using the WinPexpect_
+module, though I don't know when I'll have a chance to try this. Alternatively,
+you might want to try the Gnuplot.py_ module, which is cross-platform).
 
+.. _WinPexpect: https://bitbucket.org/geertj/winpexpect/wiki/Home
 .. _Gnuplot.py: http://gnuplot-py.sourceforge.net/
 
-Note that the documentation for Xnuplot is in its early stages of being
-written. For the most part, you'll need to look at the source code. Parts of
-the code (the :mod:`xnuplot.utils` and :mod:`xnuplot.numutils` modules) are
-also experimental, so expect changes to the API.
+This documentation for Xnuplot is not yet complete, so you will need to look at
+the code for some advanced features. Parts of the code (the
+:mod:`xnuplot.utils` and :mod:`xnuplot.numutils` modules) are experimental, so
+expect changes to the API.
 
 
 Quick introduction
 ------------------
 
-This intro (as well as the Xnuplot module and its documentation in general)
-assumes that you know how to use Gnuplot on its own. Xnuplot tries to be as
-thin a wrapper as possible, so no attempt is made to provide Python methods for
-things that can be done by issuing a simple Gnuplot command. Gnuplot has an
-excellent manual__.
+Xnuplot does not attempt to construct a full abstraction of Gnuplot commands;
+rather it aims to provide transparent access to as much as possible of
+Gnuplot's functionality, while taking care of the logistics of passing binary
+and ascii data to Gnuplot. No attempt is made to provide Python methods for
+things that can be done by issuing a simple Gnuplot command.
+
+You will therefore need to be familiar with at least the basics of using
+Gnuplot as a standalone application. Gnuplot has an excellent manual__.
 
 __ http://www.gnuplot.info/documentation.html
+
+To follow the examples below, you will need to be familiar with the Gnuplot
+keywords ``plot``, ``with``, ``using``, ``set``, and ``xrange``, among others.
 
 Here's a basic example of plotting functions and data.
 
 ::
 
   >>> import xnuplot
-  >>> plot = xnuplot.Plot()
+  >>> plot = xnuplot.Plot() # A container object that retains the source data.
   >>> plot.append("sin(x)") # Plot a function.
   >>> plot("set xrange [0.0:2.0]") # Send any Gnuplot command. Replotting is automatic by default.
   ''
   >>> plot.append(("0.0 0.0\n0.5 1.0\n1.0 0.5", "notitle with linespoints")) # Plot data.
   >>> plot.save("test.xnuplot") # Save the plot to a file, with all its data and settings.
   >>> del plot
-  >>> plot = xnuplot.load("test.xnuplot")
+  >>> plot = xnuplot.load("test.xnuplot") # Open and display the saved plot.
   >>> plot # Plot objects are a subclass of list.
   <Plot ['sin(x)', <PlotData source=str options='notitle with linespoints' mode=pipe>]>
   >>> plot[0] = "cos(x)" # So you can replace plot items (functions or data).
@@ -64,8 +73,14 @@ Here's a basic example of plotting functions and data.
   <Plot [<PlotData source=str options='notitle with linespoints' mode=pipe>]>
 
 The :mod:`xnuplot.numplot` module makes it easy to plot data from NumPy arrays.
+Instances of :class:`xnuplot.numplot.Plot` are similar to those of
+:class:`xnuplot.Plot`, except that they provide convenience methods for
+handling NumPy arrays.
+
 You will need a basic understanding of how indexing of binary data works in
-Gnuplot (sometime I'll write a tutorial on this).
+Gnuplot (some day I'll write a tutorial on this, because I found it quite
+confusing until I got it). Note that the data is piped to Gnuplot in its binary
+form, without the overhead of converting it into ascii.
 
 ::
 
@@ -74,13 +89,13 @@ Gnuplot (sometime I'll write a tutorial on this).
   x = numpy.linspace(0, 5.0 * numpy.pi, 200)
   y1 = numpy.sin(x)
   y2 = numpy.cos(x)
-  data = numpy.column_stack((x, y1, y2))
+  data = numpy.column_stack((x, y1, y2)) # Make a 200-by-3 array.
   plot = numplot.Plot()
   plot.append_record(data, options="notitle with lines", using=(0, 1))
   plot.append_record(data, options="notitle with lines", using=(0, 2))
 
-You can plot images, and there is also experimental support for getting mouse
-input::
+Just to showcase some high-level features, here is an example of plotting an
+image. There is even experimental support for getting mouse input::
 
   >>> import numpy
   >>> from xnuplot import numplot, utils, numutils
@@ -105,11 +120,11 @@ input::
   ('2.125549e+02 3.891229e+02\n1.307921e+02 2.353134e+02\n3.118102e+02 1.373838e+02\n4.224651e+02 2.988768e+02\n3.446332e+02 4.297756e+02\n2.125549e+02 3.891229e+02',
    'axes x1y1 notitle with lines')
 
-Finally, there is a simple command line script, :program:`xnuplot`, to display
-saved plots. It allows you to edit the plot settings (but not the data) from
-the Gnuplot command line, and is handy for minor tweaks like modifying the plot
-title as well as for plotting to an image or postscript file. Type
-``xnuplot --help`` to get a list of command line options.
+Last but not least, there is a simple command line script, :program:`xnuplot`,
+to display saved plots. It allows you to edit the plot settings (though not the
+data) from the Gnuplot command line, and is handy for minor tweaks like
+modifying the plot title as well as for plotting to an image or postscript
+file. Type ``xnuplot --help`` to get a list of command line options.
 
 
 Prerequisites
@@ -124,14 +139,13 @@ Prerequisites
 Documentation
 -------------
 
+Start with the ``xnuplot`` package and ``xnuplot.numplot`` module for the
+basics.
+
 .. toctree::
    :maxdepth: 2
 
-   basic
-   withnumpy
    xnuplot
-
-Documentation for other modules to be written.
 
 
 Indexes and tables

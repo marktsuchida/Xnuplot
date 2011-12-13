@@ -24,6 +24,7 @@ class RawGnuplot(object):
     """Low-level manager for communication with a Gnuplot subprocess."""
 
     gp_prompt = "gnuplot> "
+    send_chunk_length = 512
 
     def __init__(self, command=None, persist=False, tempdir=None,
                  testecho=False):
@@ -167,15 +168,39 @@ class RawGnuplot(object):
         for pipe in pipes:
             pipe.cleanup()
 
-    def _send_one_command(self, command, **data):
+    def _sendline(self, line):
+        # The os.write() call used by pexpect seems to hang when the string
+        # sent is too long, at least on Mac OS X and Gnuplot built with GNU
+        # readline. Merely sending the line in small chunks does not prevent
+        # the hangs; it is necessary to read the echo after each chunk is sent.
+        # (Thus, it appears that Gnuplot or libreadline blocks on the echo
+        # write.) To work around this issue, we send the line in small chunks
+        # and make pexpect read and buffer the echo after each send.
+        chunk_length = self.send_chunk_length
+        n_nonend_chunks = len(line) // chunk_length
+        for i in xrange(n_nonend_chunks):
+            start = i * chunk_length
+            stop = start + chunk_length
+            self.gp_proc.send(line[start:stop])
+            # Cause pexpect to read in the echo.
+            self.gp_proc.expect(pexpect.TIMEOUT, timeout=0)
+        start = n_nonend_chunks * chunk_length
+        self.gp_proc.sendline(line[start:])
+        # Skip over the echoed command (see _test_readline_echo()).
+        self.gp_proc.expect_exact("\r\n")
+
+    def _send_one_command(self, command, _extra_newline=False, **data):
         # Do the acutal work for __call__().
         with self._placeholders_substituted(command, **data) as command:
-            self.gp_proc.sendline(command)
+            self._sendline(command)
+            if _extra_newline:
+                self.gp_proc.sendline("")
+
             try:
-                # Skip over the echoed command (see _test_readline_echo()).
-                self.gp_proc.expect_exact("\r\n")
                 self.gp_proc.expect_exact(self.gp_prompt)
                 result = self.gp_proc.before
+                if _extra_newline:
+                    self.gp_proc.expect_exact(self.gp_prompt)
                 return result.replace("\r\n", "\n")
             except pexpect.EOF:
                 self.terminate()
@@ -187,42 +212,21 @@ class RawGnuplot(object):
                 self.terminate()
                 raise CommunicationError("timeout")
 
-    def _send_one_command_with_extra_newline(self, command):
+    def pause(self, *params):
+        command = " ".join(("pause",) + params)
         # At least with the tested build of Gnuplot 4.4.0 on Mac OS X, closing
         # the window does not cause `pause mouse close' to immediately return. 
         # Sending an extra newline appears to get around the block, so here is
         # a special workaround.
-        self.gp_proc.sendline(command)
-        self.gp_proc.sendline("")
-        try:
-            # Skip over the echoed command (see _test_readline_echo()).
-            self.gp_proc.expect_exact("\r\n")
-            self.gp_proc.expect_exact(self.gp_prompt)
-            result = self.gp_proc.before
-            self.gp_proc.expect_exact(self.gp_prompt)
-            return result.replace("\r\n", "\n")
-        except pexpect.EOF:
-            self.terminate()
-            if re.match(r"\s*(quit|exit)(\W|$)", command):
-                return None
-            else:
-                raise CommunicationError("Gnuplot died")
-        except pexpect.TIMEOUT:
-            self.terminate()
-            raise CommunicationError("timeout")
-
-    def pause(self, *params):
-        command = " ".join(("pause",) + params)
+        send_extra_newline = False
         if len(params) and params[0].startswith("mouse"):
-            sender = self._send_one_command_with_extra_newline
-        else:
-            sender = self._send_one_command
+            send_extra_newline = True
 
         # Temporarily disable the timeout for a `pause' command.
         save_timeout = self.timeout
         try:
             self.timeout = None
-            sender(command)
+            self._send_one_command(command, _extra_newline=send_extra_newline)
         finally:
             if self.isalive():
                 self.timeout = save_timeout

@@ -192,7 +192,13 @@ class RawGnuplot(object):
     def _send_one_command(self, command, _extra_newline=False, **data):
         # Do the acutal work for __call__().
         with self._placeholders_substituted(command, **data) as command:
-            self._sendline(command)
+            try:
+                self._sendline(command)
+            except KeyboardInterrupt, e:
+                # Kill Gnuplot if it hangs and the user terminates the
+                # command.
+                self.terminate()
+                raise CommunicationError("killed by user")
             if _extra_newline:
                 self.gp_proc.sendline("")
 

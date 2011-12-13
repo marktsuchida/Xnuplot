@@ -54,6 +54,14 @@ class Plot(_Gnuplot, _ObservedList):
 
     __call__ = _ObservedList._with_autorefresh(_Gnuplot.__call__)
 
+    def clear(self):
+        self[:] = []
+
+    def keep(self, indices):
+        if not isinstance(indices, collections.Sequence):
+            indices = (indices,)
+        self[:] = [self[i] for i in indices]
+
     def refresh(self):
         # Guard against infinite recursion.
         if self._refreshing or not self.isalive():

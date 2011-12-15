@@ -20,9 +20,9 @@ you might want to try the Gnuplot.py_ module, which is cross-platform.
 .. _Gnuplot.py: http://gnuplot-py.sourceforge.net/
 
 This documentation for Xnuplot is not yet complete, so you will need to look at
-the code for some advanced features. Parts of the code (the
-:mod:`xnuplot.utils` and :mod:`xnuplot.numutils` modules) are experimental, so
-expect changes to the API.
+the code for some advanced features. Parts of the code (the ``xnuplot.utils``
+and ``xnuplot.numutils`` modules) are experimental, so expect changes to the
+API.
 
 Xnuplot has so far only been tested in a very specific environment (Mac OS X
 and Gnuplot 4.4.0). Bug reports and other feedback would be highly appreciated.
@@ -75,10 +75,9 @@ Here's a basic example of plotting functions and data.
   >>> plot
   <Plot [<PlotData source=str options='notitle with linespoints' mode=pipe>]>
 
-The :mod:`xnuplot.numplot` module makes it easy to plot data from NumPy arrays.
-Instances of :class:`xnuplot.numplot.Plot` are similar to those of
-:class:`xnuplot.Plot`, except that they provide convenience methods for
-handling NumPy arrays.
+The ``xnuplot.numplot`` module makes it easy to plot data from NumPy arrays.
+Instances of ``xnuplot.numplot.Plot`` are similar to those of ``xnuplot.Plot``,
+except that they provide convenience methods for handling NumPy arrays.
 
 You will need a basic understanding of how indexing of binary data works in
 Gnuplot (some day I'll write a tutorial on this, because I found it quite
@@ -123,8 +122,8 @@ image. There is even experimental support for getting mouse input::
   ('2.125549e+02 3.891229e+02\n1.307921e+02 2.353134e+02\n3.118102e+02 1.373838e+02\n4.224651e+02 2.988768e+02\n3.446332e+02 4.297756e+02\n2.125549e+02 3.891229e+02',
    'axes x1y1 notitle with lines')
 
-Last but not least, there is a simple command line script, :program:`xnuplot`,
-to display saved plots. It allows you to edit the plot settings (though not the
+Last but not least, there is a simple command line script, ``xnuplot``, to
+display saved plots. It allows you to edit the plot settings (though not the
 data) from the Gnuplot command line, and is handy for minor tweaks like
 modifying the plot title as well as for plotting to an image or postscript
 file. Type ``xnuplot --help`` to get a list of command line options.
@@ -140,22 +139,8 @@ Prerequisites
   currently developed and tested on Mac OS X)
 
 
-Documentation
--------------
+License
+-------
 
-Start with the ``xnuplot`` package and ``xnuplot.numplot`` module for the
-basics.
-
-.. toctree::
-   :maxdepth: 2
-
-   xnuplot
-
-
-Indexes and tables
-------------------
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+See LICENSE.
 

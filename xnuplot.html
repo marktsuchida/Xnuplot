@@ -1,0 +1,371 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Package xnuplot &mdash; Xnuplot v0.1dev documentation</title>
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Xnuplot v0.1dev documentation" href="index.html" />
+    <link rel="next" title="Module xnuplot.gnuplot" href="gnuplot.html" />
+    <link rel="prev" title="Xnuplot" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gnuplot.html" title="Module xnuplot.gnuplot"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Xnuplot"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Xnuplot v0.1dev documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Xnuplot</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="gnuplot.html"
+                        title="next chapter">Module xnuplot.gnuplot</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/xnuplot.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="module-xnuplot">
+<span id="package-xnuplot"></span><h1>Package xnuplot<a class="headerlink" href="#module-xnuplot" title="Permalink to this headline">¶</a></h1>
+<p>Modules:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="gnuplot.html">Module xnuplot.gnuplot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="numplot.html">Module xnuplot.numplot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Module xnuplot.utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="numutils.html">Module xnuplot.numutils</a></li>
+</ul>
+</div>
+<dl class="class">
+<dt id="xnuplot.Plot">
+<em class="property">class </em><tt class="descclassname">xnuplot.</tt><tt class="descname">Plot</tt><big>(</big><span class="optional">[</span><em>autorefresh=True</em>, <em>persist=False</em>, <em>description=None</em>, <em>kwargs...</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#xnuplot.Plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>An interface to a 2D Gnuplot plot that remembers (and allows
+modification of) the current plot items.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>autorefresh</strong> (<em>bool</em>) &#8211; whether to automatically replot when plot items are
+added, removed, or replaced or the plot is otherwise
+modified</li>
+<li><strong>persist</strong> (<em>bool</em>) &#8211; whether the plot window (if any) should stay open after
+Gnuplot quits (<em>i.e.</em> after the <tt class="docutils literal"><span class="pre">Plot</span></tt> object is
+deleted)</li>
+<li><strong>description</strong> (<em>str</em>) &#8211; an arbitrary description that is saved with the plot</li>
+<li><strong>kwargs</strong> &#8211; additional keyword arguments to the lower-level
+<a class="reference internal" href="gnuplot.html#xnuplot.gnuplot.Gnuplot" title="xnuplot.gnuplot.Gnuplot"><tt class="xref py py-class docutils literal"><span class="pre">xnuplot.gnuplot.Gnuplot</span></tt></a> or
+<a class="reference internal" href="gnuplot.html#xnuplot.gnuplot.RawGnuplot" title="xnuplot.gnuplot.RawGnuplot"><tt class="xref py py-class docutils literal"><span class="pre">xnuplot.gnuplot.RawGnuplot</span></tt></a> constructors.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><tt class="docutils literal"><span class="pre">Plot</span></tt> inherits from <tt class="docutils literal"><span class="pre">list</span></tt>. You can use the standard sequence methods
+(<tt class="docutils literal"><span class="pre">insert()</span></tt>, <tt class="docutils literal"><span class="pre">append()</span></tt>, <tt class="docutils literal"><span class="pre">pop()</span></tt>, and others), the <tt class="docutils literal"><span class="pre">del</span></tt> statement,
+and the indexing operator (<tt class="docutils literal"><span class="pre">[]</span></tt>) to add, remove, and replace plot items
+(equivalent to the comma-separated arguments to Gnuplot&#8217;s <tt class="docutils literal"><span class="pre">plot</span></tt> command).</p>
+<p>If the <a class="reference internal" href="#xnuplot.Plot.autorefresh" title="xnuplot.Plot.autorefresh"><tt class="xref py py-attr docutils literal"><span class="pre">autorefresh</span></tt></a> attribute is set to <tt class="xref docutils literal"><span class="pre">True</span></tt>, simply changing the
+contents of the <tt class="docutils literal"><span class="pre">Plot</span></tt> container will automatically update the plot.</p>
+<p>Plot items can be</p>
+<ul class="simple">
+<li>a string (<em>e.g.</em> <tt class="docutils literal"><span class="pre">&quot;sin(x)&quot;</span></tt>),</li>
+<li>an <a class="reference internal" href="gnuplot.html#xnuplot.gnuplot.PlotData" title="xnuplot.gnuplot.PlotData"><tt class="xref py py-class docutils literal"><span class="pre">xnuplot.gnuplot.PlotData</span></tt></a> instance, or</li>
+<li>a tuple, (<em>data</em> [, <em>options</em> [, <em>mode</em>]]), which is used as the arguments
+to construct a <tt class="docutils literal"><span class="pre">PlotData</span></tt> object, where<ul>
+<li><em>data</em> can either be a string in a format that Gnuplot understands,
+or an object that exposes binary data (also must be in a format handled
+by Gnuplot) through the buffer protocol,</li>
+<li><em>options</em> is a string containing Gnuplot plot options (<em>e.g.</em>
+<tt class="docutils literal"><span class="pre">using</span></tt> and <tt class="docutils literal"><span class="pre">with</span></tt> clauses), and</li>
+<li><em>mode</em> is one of <tt class="docutils literal"><span class="pre">&quot;file&quot;</span></tt> or <tt class="docutils literal"><span class="pre">&quot;pipe&quot;</span></tt> (default is <tt class="docutils literal"><span class="pre">&quot;pipe&quot;</span></tt>; see
+<tt class="xref py py-meth docutils literal"><span class="pre">xnuplot.gnuplot.Gnuplot.plot()</span></tt> for details).</li>
+</ul>
+</li>
+</ul>
+<p>For example,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">plot</span> <span class="o">=</span> <span class="n">xnuplot</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;sin(x) notitle&quot;</span><span class="p">)</span>
+<span class="n">plot</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s">&quot;0 0</span><span class="se">\n</span><span class="s">3.14 1.0&quot;</span><span class="p">,</span>
+             <span class="s">&quot;using linespoints title &#39;Line segment&#39;&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>This is roughly equivalent to the following Gnuplot command:</p>
+<div class="highlight-gnuplot"><div class="highlight"><pre><span class="k">plot</span> <span class="nf">sin</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="nb">notitle</span><span class="o">,</span> \
+     <span class="s">&#39;line.dat&#39;</span> <span class="nb">using</span> <span class="n">linespoints</span> <span class="nb">title</span> <span class="s">&#39;Line segment&#39;</span>
+</pre></div>
+</div>
+<p>where the contents of <tt class="docutils literal"><span class="pre">line.dat</span></tt> is</p>
+<div class="highlight-gnuplot"><pre>0 0
+3.14 1.0</pre>
+</div>
+<p>Except that with Xnuplot, you can alter the plot items without having to
+reenter the unchanged ones:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">plot</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="c"># This removes the sin(x) but keeps the line segment.</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><tt class="docutils literal"><span class="pre">Plot</span></tt> objects always use Gnuplot&#8217;s <tt class="docutils literal"><span class="pre">plot</span></tt> command to render the
+plot. To plot bivariate data (using the <tt class="docutils literal"><span class="pre">splot</span></tt> command), use the
+analogous <a class="reference internal" href="#xnuplot.SPlot" title="xnuplot.SPlot"><tt class="xref py py-class docutils literal"><span class="pre">SPlot</span></tt></a> class.</p>
+</div>
+<dl class="attribute">
+<dt id="xnuplot.Plot.autorefresh">
+<tt class="descname">autorefresh</tt><a class="headerlink" href="#xnuplot.Plot.autorefresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <tt class="xref docutils literal"><span class="pre">True</span></tt>, refresh the plot (reissue the Gnuplot <tt class="docutils literal"><span class="pre">plot</span></tt> command)
+every time the plot is modified.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xnuplot.Plot.description">
+<tt class="descname">description</tt><a class="headerlink" href="#xnuplot.Plot.description" title="Permalink to this definition">¶</a></dt>
+<dd><p>A description for the plot. This can be set to any value, and is saved
+together with the plot by the <a class="reference internal" href="#xnuplot.Plot.save" title="xnuplot.Plot.save"><tt class="xref py py-meth docutils literal"><span class="pre">save()</span></tt></a> method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="xnuplot.Plot.__call__">
+<tt class="descname">__call__</tt><big>(</big><em>command</em><span class="optional">[</span>, <em>dataitems...</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#xnuplot.Plot.__call__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Execute a Gnuplot command.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>command</strong> (<em>str</em>) &#8211; the command to execute</li>
+<li><strong>dataitems</strong> (<em>keyword arguments</em>) &#8211; data to pass to Gnuplot (see
+<tt class="xref py py-meth docutils literal"><span class="pre">xnuplot.gnuplot.RawGnuplot.__call__()</span></tt>)</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the output from the command</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>For example,</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">plot</span> <span class="o">=</span> <span class="n">xnuplot</span><span class="o">.</span><span class="n">Plot</span><span class="p">()</span>
+<span class="n">plot</span><span class="p">(</span><span class="s">&quot;set style data linespoints&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">It is usually not necessary to use the low level data passing
+interface provided by the <em>dataitems</em> arguments. Instead, use the
+sequence methods (<tt class="xref py py-meth docutils literal"><span class="pre">append()</span></tt>, etc.) to plot data and <a class="reference internal" href="#xnuplot.Plot.fit" title="xnuplot.Plot.fit"><tt class="xref py py-meth docutils literal"><span class="pre">fit()</span></tt></a>
+to perform curve fitting.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="xnuplot.Plot.interact">
+<tt class="descname">interact</tt><big>(</big><big>)</big><a class="headerlink" href="#xnuplot.Plot.interact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interact with the Gnuplot command line.</p>
+<p>This is handy during interactive use for quickly setting or inspecting
+various plot attributes, reading the Gnuplot online documentation, or for
+using the mouse to manipulate the plot (when using a mouse-enabled
+terminal such as the x11 terminal).</p>
+<p>Type <tt class="kbd docutils literal"><span class="pre">Control-]</span></tt> to exit interact mode and return to Python.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="xnuplot.Plot.refresh">
+<tt class="descname">refresh</tt><big>(</big><big>)</big><a class="headerlink" href="#xnuplot.Plot.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Draw or redraw the plot with the current plot items.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="xnuplot.Plot.save">
+<tt class="descname">save</tt><big>(</big><em>file</em><big>)</big><a class="headerlink" href="#xnuplot.Plot.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the plot to a file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file</strong> (<em>string (filename) or file object</em>) &#8211; the file to save to.</td>
+</tr>
+</tbody>
+</table>
+<p>The saved file will contain the current settings of the attached Gnuplot
+process as well as the plot items contained in the <tt class="docutils literal"><span class="pre">Plot</span></tt> object. Saved
+plots can be loaded with <a class="reference internal" href="#xnuplot.load" title="xnuplot.load"><tt class="xref py py-func docutils literal"><span class="pre">load()</span></tt></a> or by using the <strong class="program">xnuplot</strong>
+command line tool.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="xnuplot.Plot.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#xnuplot.Plot.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Terminate the attached Gnuplot process. This is called automatically when
+the <tt class="docutils literal"><span class="pre">Plot</span></tt> object is deleted (or garbage-collected).</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="xnuplot.Plot.fit">
+<tt class="descname">fit</tt><big>(</big><em>data</em>, <em>expr</em>, <em>via</em><span class="optional">[</span>, <em>ranges</em>, <em>limit</em>, <em>maxiter</em>, <em>start_lambda</em>, <em>lambda_factor</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#xnuplot.Plot.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform curve fitting using Gnuplot&#8217;s <tt class="docutils literal"><span class="pre">fit</span></tt> command.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data</strong> (tuple or <a class="reference internal" href="gnuplot.html#xnuplot.gnuplot.PlotData" title="xnuplot.gnuplot.PlotData"><tt class="xref py py-class docutils literal"><span class="pre">xnuplot.gnuplot.PlotData</span></tt></a>) &#8211; a plot item specifying the data to fit to</li>
+<li><strong>expr</strong> (<em>str</em>) &#8211; the Gnuplot expression for the function to fit</li>
+<li><strong>via</strong> (<em>str, tuple, or dict</em>) &#8211; the variables to float (and, optionally, their initial values):
+<em>e.g.</em> <tt class="docutils literal"><span class="pre">&quot;a,</span> <span class="pre">b&quot;</span></tt>, <tt class="docutils literal"><span class="pre">(&quot;a&quot;,</span> <span class="pre">&quot;b&quot;)</span></tt>, or <tt class="docutils literal"><span class="pre">{&quot;a&quot;:</span> <span class="pre">0.1,</span> <span class="pre">&quot;b&quot;:</span> <span class="pre">3.0}</span></tt></li>
+<li><strong>ranges</strong> (<em>str</em>) &#8211; the range(s) to fit over (this is passed verbatim to
+Gnuplot): <em>e.g.</em> <tt class="docutils literal"><span class="pre">&quot;[0.0:1.0]&quot;</span></tt></li>
+<li><strong>limit</strong> &#8211; set Gnuplot&#8217;s FIT_LIMIT</li>
+<li><strong>maxiter</strong> &#8211; set Gnuplot&#8217;s FIT_MAXITER</li>
+<li><strong>start_lambda</strong> &#8211; set Gnuplot&#8217;s FIT_START_LAMBDA</li>
+<li><strong>lambda_factor</strong> &#8211; set Gnuplot&#8217;s FIT_LAMBDA_FACTOR</li>
+</ul>
+</td>
+</tr>
+<tr class="field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><p>(<em>params</em>, <em>errors</em>, <em>log</em>), where</p>
+<ul class="simple">
+<li><em>params</em> is a dictionary containing the fit parameter values,</li>
+<li><em>errors</em> is a dictionary containing the errors of the fit for
+each parameter, and</li>
+<li><em>log</em> is the human-readable report from the <tt class="docutils literal"><span class="pre">fit</span></tt> command.</li>
+</ul>
+</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="xnuplot.SPlot">
+<em class="property">class </em><tt class="descclassname">xnuplot.</tt><tt class="descname">SPlot</tt><big>(</big><span class="optional">[</span><em>autorefresh=True</em>, <em>persist=False</em>, <em>description=None</em>, <em>kwargs...</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#xnuplot.SPlot" title="Permalink to this definition">¶</a></dt>
+<dd><p>An interface to a Gnuplot bivariate (surface) plot.</p>
+<p>Usage is exactly the same as <a class="reference internal" href="#xnuplot.Plot" title="xnuplot.Plot"><tt class="xref py py-class docutils literal"><span class="pre">Plot</span></tt></a>, except that the items are
+plotted using Gnuplot&#8217;s <tt class="docutils literal"><span class="pre">splot</span></tt> command instead of the <tt class="docutils literal"><span class="pre">plot</span></tt> command.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="xnuplot.load">
+<tt class="descclassname">xnuplot.</tt><tt class="descname">load</tt><big>(</big><em>file</em><span class="optional">[</span>, <em>autorefresh=True</em>, <em>persist=False</em>, <em>class_=None</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#xnuplot.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a plot archived by the <a class="reference internal" href="#xnuplot.Plot.save" title="xnuplot.Plot.save"><tt class="xref py py-meth docutils literal"><span class="pre">Plot.save()</span></tt></a> or <tt class="xref py py-meth docutils literal"><span class="pre">SPlot.save()</span></tt> method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>file</strong> (<em>string (filename) or file object</em>) &#8211; the file containing the saved plot to load</li>
+<li><strong>autorefresh</strong> (<em>bool</em>) &#8211; whether to automatically replot when plot items are
+added, removed, or replaced or the plot is otherwise
+modified</li>
+<li><strong>persist</strong> (<em>bool</em>) &#8211; whether the plot window (if any) should stay open after
+Gnuplot quits (<em>i.e.</em> after the <a class="reference internal" href="#xnuplot.Plot" title="xnuplot.Plot"><tt class="xref py py-class docutils literal"><span class="pre">Plot</span></tt></a> object is
+deleted)</li>
+<li><strong>class_</strong> (<em>class</em>) &#8211; the class to use for the returned plot object (defaults
+to <a class="reference internal" href="#xnuplot.Plot" title="xnuplot.Plot"><tt class="xref py py-class docutils literal"><span class="pre">xnuplot.Plot</span></tt></a> or <a class="reference internal" href="#xnuplot.SPlot" title="xnuplot.SPlot"><tt class="xref py py-class docutils literal"><span class="pre">xnuplot.SPlot</span></tt></a>,
+depending on the plot contained in <em>file</em>)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>The <em>class_</em> argument is useful if, for example, you want to load a saved
+plot as a <a class="reference internal" href="numplot.html#xnuplot.numplot.Plot" title="xnuplot.numplot.Plot"><tt class="xref py py-class docutils literal"><span class="pre">numplot.Plot</span></tt></a> object.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="xnuplot.closeall">
+<tt class="descclassname">xnuplot.</tt><tt class="descname">closeall</tt><big>(</big><big>)</big><a class="headerlink" href="#xnuplot.closeall" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close all xnuplot plots and terminate all interfaced Gnuplot processes.
+(This acts on <a class="reference internal" href="gnuplot.html#xnuplot.gnuplot.Gnuplot" title="xnuplot.gnuplot.Gnuplot"><tt class="xref py py-class docutils literal"><span class="pre">xnuplot.gnuplot.Gnuplot</span></tt></a> and
+<a class="reference internal" href="gnuplot.html#xnuplot.gnuplot.RawGnuplot" title="xnuplot.gnuplot.RawGnuplot"><tt class="xref py py-class docutils literal"><span class="pre">xnuplot.gnuplot.RawGnuplot</span></tt></a> objects as well as <a class="reference internal" href="#xnuplot.Plot" title="xnuplot.Plot"><tt class="xref py py-class docutils literal"><span class="pre">Plot</span></tt></a> and
+<a class="reference internal" href="#xnuplot.SPlot" title="xnuplot.SPlot"><tt class="xref py py-class docutils literal"><span class="pre">SPlot</span></tt></a> objects.)</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="gnuplot.html" title="Module xnuplot.gnuplot"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Xnuplot"
+             >previous</a> |</li>
+        <li><a href="index.html">Xnuplot v0.1dev documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Mark A. Tsuchida.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>

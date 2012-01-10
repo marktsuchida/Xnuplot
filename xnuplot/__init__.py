@@ -19,6 +19,7 @@
 # IN THE SOFTWARE.
 
 from .gnuplot import closeall
-from .plot import Plot, SPlot, load
-__all__ = ["Plot", "SPlot", "load", "closeall", "gnuplot", "numplot"]
+from .plot import Plot, SPlot, Multiplot, GridMultiplot, load
+__all__ = ["Plot", "SPlot", "Multiplot", "GridMultiplot", "load",
+           "closeall", "gnuplot", "numplot"]
 

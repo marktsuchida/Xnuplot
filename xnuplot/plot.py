@@ -80,9 +80,19 @@ for name in _ObservedList._modifying_methods:
             _ObservedList._with_autorefresh(getattr(list, name)))
 
 
-class _Saver(object):
+class _BasePlot(_Gnuplot):
+    def environment_script(self):
+        script = self("save '-'").split("\n")
+        script = [line for line in script if len(line) and
+                  not line.lstrip().startswith("#") and
+                  not line.startswith("plot ") and
+                  not line.startswith("splot ") and
+                  not line.startswith("GNUTERM =")]
+        script = "\n".join(script)
+        return script
+
     def save(self, file):
-        data = self._data_dict()
+        data = self._data_dict() # _data_dict() defined by subclasses.
         data["magic"] = _MAGIC
 
         if hasattr(file, "write"):
@@ -92,7 +102,7 @@ class _Saver(object):
                 pickle.dump(data, f)
 
 
-class Plot(_Gnuplot, _ObservedList, _Saver):
+class Plot(_BasePlot, _ObservedList):
     _plotmethod = _Gnuplot.plot
     _plotcmd = "plot" # for save()
 
@@ -105,19 +115,10 @@ class Plot(_Gnuplot, _ObservedList, _Saver):
 
         # Multiplot support.
         self.parents = []
-        self._preplot_script = None
         self._size = None
         self._origin = None
 
     __call__ = _ObservedList._with_autorefresh(_Gnuplot.__call__)
-
-    @property
-    def preplot_script(self):
-        return self._preplot_script
-    @preplot_script.setter
-    @_ObservedList._with_autorefresh
-    def preplot_script(self, script):
-        self._preplot_script = script
 
     @property
     def size(self):
@@ -136,10 +137,9 @@ class Plot(_Gnuplot, _ObservedList, _Saver):
         self._origin = origin
 
     def refresh(self):
-        if self.parents:
-            for parent in self.parents:
-                if parent.autorefresh:
-                    parent.refresh()
+        for parent in self.parents:
+            if parent.autorefresh:
+                parent.refresh()
 
         # Guard against infinite recursion.
         if self._refreshing or not self.isalive():
@@ -206,7 +206,7 @@ class Plot(_Gnuplot, _ObservedList, _Saver):
 
         return params, errors, log
 
-    def _data_dict(self, with_script=True):
+    def _data_dict(self):
         items = []
         for item in self:
             if isinstance(item, basestring):
@@ -216,27 +216,19 @@ class Plot(_Gnuplot, _ObservedList, _Saver):
                     item = PlotData(*item)
                 items.append((item.data, item.options, item.mode))
 
-        data = {"version": _PLOT_FILE_VERSION,
+        data = {
+                "version": _PLOT_FILE_VERSION,
                 "description": self.description,
-                "plot": self._plotcmd, "items": items}
+                "plot": self._plotcmd,
+                "items": items,
+                "script": self.environment_script(),
+               }
 
-        if with_script:
-            # TODO Make this a method of a common superclass with Multiplot.
-            script = self("save '-'").split("\n")
-            script = [line for line in script if len(line) and
-                      not line.lstrip().startswith("#") and
-                      not line.startswith("plot ") and
-                      not line.startswith("splot ") and
-                      not line.startswith("GNUTERM =")]
-            script = "\n".join(script)
-            data["script"] = script
-
-        if self.preplot_script:
-            data["preplot_script"] = self.preplot_script
         if self.size:
             data["size"] = self.size
         if self.origin:
             data["origin"] = self.origin
+
         return data
 
     def __repr__(self):
@@ -248,7 +240,7 @@ class SPlot(Plot):
     _plotcmd = "splot" # for save()
 
 
-class Multiplot(_Gnuplot, _ObservedList, _Saver):
+class Multiplot(_BasePlot, _ObservedList):
     def __init__(self, autorefresh=True, description=None, **kwargs):
         _ObservedList.__init__(self, [])
         _Gnuplot.__init__(self, **kwargs)
@@ -307,12 +299,18 @@ class Multiplot(_Gnuplot, _ObservedList, _Saver):
                             # a multiplot.
                             warnings.warn("skipping empty plot")
                             continue
-                        if plot.preplot_script:
-                            self.source(plot.preplot_script)
+
+                        script = plot.environment_script().split("\n")
+                        script = [line for line in script if
+                                  not line.startswith("set origin ") and
+                                  not line.startswith("set size ")]
+                        self.source("\n".join(script))
+
                         if plot.size:
                             self("set size %e, %e" % plot.size)
                         if plot.origin:
                             self("set origin %e, %e" % plot.origin)
+
                         plotmethod = plot._plotmethod.im_func
                         plotmethod(self, *plot)
                 finally:
@@ -337,21 +335,15 @@ class Multiplot(_Gnuplot, _ObservedList, _Saver):
     def _data_dict(self):
         subplots = []
         for plot in self:
-            subplots.append(plot._data_dict(with_script=False))
+            subplots.append(plot._data_dict())
 
-        data = {"version": _MULTIPLOT_FILE_VERSION,
+        data = {
+                "version": _MULTIPLOT_FILE_VERSION,
                 "description": self.description,
-                "plot": "multiplot", "items": subplots}
-
-        # TODO Make this a method of a common superclass with Multiplot.
-        script = self("save '-'").split("\n")
-        script = [line for line in script if len(line) and
-                  not line.lstrip().startswith("#") and
-                  not line.startswith("plot ") and
-                  not line.startswith("splot ") and
-                  not line.startswith("GNUTERM =")]
-        script = "\n".join(script)
-        data["script"] = script
+                "plot": "multiplot",
+                "items": subplots,
+                "script": self.environment_script(),
+               }
 
         return data
 
@@ -439,6 +431,7 @@ class GridMultiplot(Multiplot):
 
     def _data_dict(self):
         data = Multiplot._data_dict(self)
+
         data["plot"] = "gridmultiplot"
         data["grid_rows"] = self.rows
         data["grid_cols"] = self.cols
@@ -450,11 +443,11 @@ class GridMultiplot(Multiplot):
             data["grid_scale"] = self.scale
         if self.offset:
             data["grid_offset"] = self.offset
+
         return data
 
 
-def load(file, persist=False, autorefresh=True, class_=None,
-         keep_subplots_alive=False):
+def load(file, persist=False, autorefresh=True, class_=None):
     if hasattr(file, "read"):
         data = pickle.load(file)
     else:
@@ -467,18 +460,20 @@ def load(file, persist=False, autorefresh=True, class_=None,
         raise FormatError("does not appear to be an xnuplot session file")
 
     if data["plot"] in ("plot", "splot"):
-        plot = _load_plot(data, persist, autorefresh, class_)
+        plot = _load_plot(data, persist, class_)
     else:
-        plot = _load_multiplot(data, persist, autorefresh, class_,
-                               keep_subplots_alive)
+        plot = _load_multiplot(data, persist, class_)
 
     plot.autorefresh = autorefresh
+    if data["plot"] in ("multiplot", "gridmultiplot"):
+        for p in plot:
+            p.autorefresh = autorefresh
     if autorefresh:
         plot.refresh()
     return plot
 
 
-def _load_plot(data, persist=False, autorefresh=True, class_=None):
+def _load_plot(data, persist=False, class_=None):
     if data["version"] > _LOADABLE_FILE_VERSION:
         raise FormatError("file saved by a newer version of xnuplot")
 
@@ -503,8 +498,6 @@ def _load_plot(data, persist=False, autorefresh=True, class_=None):
     if "script" in data:
         plot.source(data["script"])
 
-    if "preplot_script" in data:
-        plot.preplot_script = data["preplot_script"]
     if "size" in data:
         plot.size = data["size"]
     if "origin" in data:
@@ -518,8 +511,7 @@ def _load_plot(data, persist=False, autorefresh=True, class_=None):
 
     return plot
 
-def _load_multiplot(data, persist=False, autorefresh=True, class_=None,
-                    keep_subplots_alive=False):
+def _load_multiplot(data, persist=False, class_=None):
     if data["version"] > _LOADABLE_FILE_VERSION:
         raise FormatError("file saved by a newer version of xnuplot")
 
@@ -558,9 +550,7 @@ def _load_multiplot(data, persist=False, autorefresh=True, class_=None,
             plot.offset = data["grid_offset"]
 
     for item in data["items"]:
-        subplot = _load_plot(item, persist, autorefresh=False)
-        if not keep_subplots_alive:
-            subplot.close()
+        subplot = _load_plot(item, persist)
         plot.append(subplot)
 
     return plot

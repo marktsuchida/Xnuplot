@@ -19,12 +19,12 @@
 # IN THE SOFTWARE.
 
 from ._gnuplot import RawGnuplot, Gnuplot, PlotData, closeall
-from ._plot import Multiplot, GridMultiplot, load
+from ._plot import Plot, SPlot, Multiplot, GridMultiplot, load
 
 try:
     import numpy as _numpy
 except ImportError, e:
-    from ._plot import Plot, SPlot
+    pass
 else:
-    from ._numplot import Plot, SPlot, array, record, matrix
+    from ._numplot import array, record, matrix
 

@@ -21,7 +21,6 @@
 from ._gnuplot import Gnuplot, PlotData, GnuplotError
 import collections
 import cPickle as pickle
-import warnings
 
 _MAGIC = "xnuplot-saved-session"
 _PLOT_FILE_VERSION = 0
@@ -331,9 +330,8 @@ class Multiplot(_BasePlot):
             try:
                 for plot in self:
                     if len(plot) == 0:
-                        # There is no way to insert an empty plot into
+                        # There is no clean way to insert an empty plot into
                         # a multiplot.
-                        warnings.warn("skipping empty plot")
                         continue
 
                     # For GridMultiplot to work, we need to override any

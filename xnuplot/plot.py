@@ -146,6 +146,20 @@ class Plot(_BasePlot):
         self._size = None
         self._origin = None
 
+    def clone(self, **kwargs):
+        autorefresh = kwargs.get("autorefresh", self.autorefresh)
+        kwargs["autorefresh"] = False
+        kwargs.setdefault("description", self.description)
+        copy = self.__class__(**kwargs)
+        copy.source(self.environment_script())
+        copy.size = self.size
+        copy.origin = self.origin
+        copy[:] = self
+        copy.autorefresh = autorefresh
+        if autorefresh:
+            copy.refresh()
+        return copy
+
     @property
     def size(self):
         return self._size
@@ -269,6 +283,21 @@ class SPlot(Plot):
 class Multiplot(_BasePlot):
     __call__ = _ObservedList._with_autorefresh(_Gnuplot.__call__)
 
+    def clone(self, recursive=False, **kwargs):
+        autorefresh = kwargs.get("autorefresh", self.autorefresh)
+        kwargs["autorefresh"] = False
+        kwargs.setdefault("description", self.description)
+        copy = self.__class__(**kwargs)
+        copy.source(self.environment_script())
+        if recursive:
+            copy[:] = [subplot.clone() for subplot in self]
+        else:
+            copy[:] = self
+        copy.autorefresh = autorefresh
+        if autorefresh:
+            copy.refresh()
+        return copy
+
     def _multiplot_command(self):
         return "set multiplot"
 
@@ -371,6 +400,16 @@ class GridMultiplot(Multiplot):
         self._rowsfirst = rowsfirst; self._upwards = upwards
         self._title = title
         self._scale = scale; self._offset = offset
+
+    def clone(self, recursive=False, **kwargs):
+        kwargs["rows"] = self.rows
+        kwargs["cols"] = self.cols
+        kwargs["rowsfirst"] = self.rowsfirst
+        kwargs["upwards"] = self.upwards
+        kwargs["title"] = self.title
+        kwargs["scale"] = self.scale
+        kwargs["offset"] = self.offset
+        return Multiplot.clone(self, recursive, **kwargs)
 
     @property
     def rows(self):

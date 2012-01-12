@@ -35,6 +35,7 @@ class _ObservedList(list):
     # A list that calls self.refresh() upon modification when self.autorefresh
     # is true.
     autorefresh = True
+    _block_refresh = False
 
     def clear(self):
         self[:] = []
@@ -45,6 +46,16 @@ class _ObservedList(list):
         self[:] = [self[i] for i in indices]
 
     def refresh(self):
+        if self._block_refresh:
+            return
+
+        try:
+            self._block_refresh = True
+            self._perform_refresh()
+        finally:
+            self._block_refresh = False
+
+    def _perform_refresh(self):
         pass
 
     def _perform_autorefresh(self):
@@ -84,16 +95,33 @@ for name in _ObservedList._modifying_methods:
             _ObservedList._with_autorefresh(getattr(list, name)))
 
 
-class _BasePlot(_Gnuplot):
+class _BasePlot(_Gnuplot, _ObservedList):
+    def __init__(self, autorefresh=True, description=None, **kwargs):
+        _ObservedList.__init__(self)
+        _Gnuplot.__init__(self, **kwargs)
+        self.autorefresh = autorefresh
+        self.description = description
+
+    __call__ = _ObservedList._with_autorefresh(_Gnuplot.__call__)
+
+    def __repr__(self):
+        classname = self.__class__.__name__
+        return "<{0} {1}>".format(classname, _ObservedList.__repr__(self))
+
     def environment_script(self):
-        script = self("save '-'").split("\n")
-        script = [line for line in script if len(line) and
-                  not line.lstrip().startswith("#") and
-                  not line.startswith("plot ") and
-                  not line.startswith("splot ") and
-                  not line.startswith("GNUTERM =")]
-        script = "\n".join(script)
-        return script
+        try:
+            blocking_refresh = self._block_refresh
+            self._block_refresh = True
+            script = self("save '-'").split("\n")
+            script = [line for line in script if len(line) and
+                      not line.lstrip().startswith("#") and
+                      not line.startswith("plot ") and
+                      not line.startswith("splot ") and
+                      not line.startswith("GNUTERM =")]
+            script = "\n".join(script)
+            return script
+        finally:
+            self._block_refresh = blocking_refresh
 
     def save(self, file):
         data = self._data_dict() # _data_dict() defined by subclasses.
@@ -106,23 +134,17 @@ class _BasePlot(_Gnuplot):
                 pickle.dump(data, f)
 
 
-class Plot(_BasePlot, _ObservedList):
+class Plot(_BasePlot):
     _plotmethod = _Gnuplot.plot
     _plotcmd = "plot" # for save()
 
     def __init__(self, autorefresh=True, description=None, **kwargs):
-        _ObservedList.__init__(self, [])
-        _Gnuplot.__init__(self, **kwargs)
-        self.autorefresh = autorefresh
-        self.description = description
-        self._refreshing = False
+        _BasePlot.__init__(self, autorefresh, description, **kwargs)
 
         # Multiplot support.
         self.parents = []
         self._size = None
         self._origin = None
-
-    __call__ = _ObservedList._with_autorefresh(_Gnuplot.__call__)
 
     @property
     def size(self):
@@ -142,7 +164,7 @@ class Plot(_BasePlot, _ObservedList):
 
     def _perform_autorefresh(self):
         # Do not trigger parent autorefresh when just refreshing self.
-        if self._refreshing:
+        if self._block_refresh:
             return
 
         _ObservedList._perform_autorefresh(self)
@@ -150,23 +172,20 @@ class Plot(_BasePlot, _ObservedList):
         for parent in self.parents:
             parent._perform_autorefresh()
 
-    def refresh(self):
-        # Guard against infinite recursion.
-        if self._refreshing or not self.isalive():
+    def _perform_refresh(self):
+        if not self.isalive():
             return
-        self._refreshing = True
-        try:
-            if len(self):
-                self._plotmethod(*self)
-            else:
-                self("clear")
-        finally:
-            self._refreshing = False
+
+        if len(self):
+            self._plotmethod(*self)
+        else:
+            self("clear")
 
     def fit(self, data, expr, via, ranges=None,
             limit=None, maxiter=None, start_lambda=None, lambda_factor=None):
         # Suppress autorefresh while we execute a number of Gnuplot commands.
-        self._refreshing = True
+        blocking_refresh = self._block_refresh
+        self._block_refresh = True
         skip_autorefresh = False
         try:
             return self._fit(data, expr, via, ranges, limit, maxiter,
@@ -174,7 +193,7 @@ class Plot(_BasePlot, _ObservedList):
         except:
             skip_autorefresh = True
         finally:
-            self._refreshing = False
+            self._block_refresh = blocking_refresh
             if not skip_autorefresh:
                 self._perform_autorefresh()
 
@@ -241,23 +260,13 @@ class Plot(_BasePlot, _ObservedList):
 
         return data
 
-    def __repr__(self):
-        classname = self.__class__.__name__
-        return "<{0} {1}>".format(classname, _ObservedList.__repr__(self))
 
 class SPlot(Plot):
     _plotmethod = _Gnuplot.splot
     _plotcmd = "splot" # for save()
 
 
-class Multiplot(_BasePlot, _ObservedList):
-    def __init__(self, autorefresh=True, description=None, **kwargs):
-        _ObservedList.__init__(self, [])
-        _Gnuplot.__init__(self, **kwargs)
-        self.autorefresh = autorefresh
-        self.description = description
-        self._refreshing = False
-
+class Multiplot(_BasePlot):
     __call__ = _ObservedList._with_autorefresh(_Gnuplot.__call__)
 
     def _multiplot_command(self):
@@ -291,46 +300,42 @@ class Multiplot(_BasePlot, _ObservedList):
             ratio_arg = "ratio %e" % self._saved_size_ratio
         self("set size %s %e, %e" % ((ratio_arg,) + self._saved_size))
 
-    def refresh(self):
-        # Guard against infinite recursion.
-        if self._refreshing or not self.isalive():
+    def _perform_refresh(self):
+        if not self.isalive():
             return
-        self._refreshing = True
-        try:
-            if len(self):
-                self._save_origin_and_size()
-                self._saved_prompt = self.gp_prompt
-                self.gp_prompt = "multiplot> "
-                self(self._multiplot_command())
-                try:
-                    for plot in self:
-                        if len(plot) == 0:
-                            # There is no way to insert an empty plot into
-                            # a multiplot.
-                            warnings.warn("skipping empty plot")
-                            continue
 
-                        script = plot.environment_script().split("\n")
-                        script = [line for line in script if
-                                  not line.startswith("set origin ") and
-                                  not line.startswith("set size ")]
-                        self.source("\n".join(script))
+        if len(self):
+            self._save_origin_and_size()
+            self._saved_prompt = self.gp_prompt
+            self.gp_prompt = "multiplot> "
+            self(self._multiplot_command())
+            try:
+                for plot in self:
+                    if len(plot) == 0:
+                        # There is no way to insert an empty plot into
+                        # a multiplot.
+                        warnings.warn("skipping empty plot")
+                        continue
 
-                        if plot.size:
-                            self("set size %e, %e" % plot.size)
-                        if plot.origin:
-                            self("set origin %e, %e" % plot.origin)
+                    script = plot.environment_script().split("\n")
+                    script = [line for line in script if
+                              not line.startswith("set origin ") and
+                              not line.startswith("set size ")]
+                    self.source("\n".join(script))
 
-                        plotmethod = plot._plotmethod.im_func
-                        plotmethod(self, *plot)
-                finally:
-                    self.gp_prompt = self._saved_prompt
-                    self("unset multiplot")
-                    self._restore_origin_and_size()
-            else:
-                self("clear")
-        finally:
-            self._refreshing = False
+                    if plot.size:
+                        self("set size %e, %e" % plot.size)
+                    if plot.origin:
+                        self("set origin %e, %e" % plot.origin)
+
+                    plotmethod = plot._plotmethod.im_func
+                    plotmethod(self, *plot)
+            finally:
+                self.gp_prompt = self._saved_prompt
+                self("unset multiplot")
+                self._restore_origin_and_size()
+        else:
+            self("clear")
 
     def notify_change(self, old, new):
         new_ids = [id(p) for p in new]
@@ -356,10 +361,6 @@ class Multiplot(_BasePlot, _ObservedList):
                }
 
         return data
-
-    def __repr__(self):
-        classname = self.__class__.__name__
-        return "<{0} {1}>".format(classname, _ObservedList.__repr__(self))
 
 
 class GridMultiplot(Multiplot):

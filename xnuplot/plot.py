@@ -35,8 +35,6 @@ class _ObservedList(list):
     # A list that calls self.refresh() upon modification when self.autorefresh
     # is true.
     autorefresh = True
-    def refresh(self):
-        pass
 
     def clear(self):
         self[:] = []
@@ -45,6 +43,13 @@ class _ObservedList(list):
         if not isinstance(indices, collections.Sequence):
             indices = (indices,)
         self[:] = [self[i] for i in indices]
+
+    def refresh(self):
+        pass
+
+    def _perform_autorefresh(self):
+        if self.autorefresh:
+            self.refresh()
 
     # Replace all list-modifying methods with wrapped versions that call
     # self.refresh() when self.autorefresh is true.
@@ -59,8 +64,7 @@ class _ObservedList(list):
                 if ([id(o) for o in new_contents] !=
                     [id(o) for o in old_contents]):
                     self.notify_change(old_contents, new_contents)
-            if self.autorefresh:
-                self.refresh()
+            self._perform_autorefresh()
             return result
         return call_and_refresh
     _modifying_methods = ["append", "extend",
@@ -136,11 +140,17 @@ class Plot(_BasePlot, _ObservedList):
     def origin(self, origin):
         self._origin = origin
 
-    def refresh(self):
-        for parent in self.parents:
-            if parent.autorefresh:
-                parent.refresh()
+    def _perform_autorefresh(self):
+        # Do not trigger parent autorefresh when just refreshing self.
+        if self._refreshing:
+            return
 
+        _ObservedList._perform_autorefresh(self)
+
+        for parent in self.parents:
+            parent._perform_autorefresh()
+
+    def refresh(self):
         # Guard against infinite recursion.
         if self._refreshing or not self.isalive():
             return
@@ -165,8 +175,8 @@ class Plot(_BasePlot, _ObservedList):
             skip_autorefresh = True
         finally:
             self._refreshing = False
-            if not skip_autorefresh and self.autorefresh:
-                self.refresh()
+            if not skip_autorefresh:
+                self._perform_autorefresh()
 
     def _fit(self, data, expr, via, ranges,
              limit, maxiter, start_lambda, lambda_factor):
@@ -465,9 +475,6 @@ def load(file, persist=False, autorefresh=True, class_=None):
         plot = _load_multiplot(data, persist, class_)
 
     plot.autorefresh = autorefresh
-    if data["plot"] in ("multiplot", "gridmultiplot"):
-        for p in plot:
-            p.autorefresh = autorefresh
     if autorefresh:
         plot.refresh()
     return plot

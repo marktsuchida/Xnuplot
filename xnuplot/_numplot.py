@@ -18,8 +18,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-from . import gnuplot
-from . import Plot as _Plot, SPlot as _SPlot
+from . import PlotData
+from ._plot import Plot as _Plot, SPlot as _SPlot
 import numpy
 
 def array(arr, options=None, coord_options=None, using=None):
@@ -44,7 +44,7 @@ def matrix(arr, xcoords, ycoords, options=None):
     # Gnuplot (as of 4.4.0) fseek()s to the end of a `binary matrix' datafile
     # before reading the actual data, so sending the data through a pipe
     # doesn't work. Therefore, use real file.
-    return gnuplot.PlotData(m, options, mode="file")
+    return PlotData(m, options, mode="file")
 
 def _array_or_record(arr, array_or_record, options,
                      coord_options=None, using=None):
@@ -83,7 +83,7 @@ def _array_or_record(arr, array_or_record, options,
     options = " ".join(filter(None, ["binary", dataspec, format, endian,
                                      coord_options, using, options]))
 
-    return gnuplot.PlotData(a, options)
+    return PlotData(a, options)
 
 def _gnuplot_array_and_format(a, count=1):
     # Get the corresponding Gnuplot format, converting a if necessary.

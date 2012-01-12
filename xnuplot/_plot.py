@@ -18,7 +18,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-from .gnuplot import Gnuplot as _Gnuplot, PlotData, GnuplotError
+from ._gnuplot import Gnuplot, PlotData, GnuplotError
 import collections
 import cPickle as pickle
 import warnings
@@ -95,14 +95,14 @@ for name in _ObservedList._modifying_methods:
             _ObservedList._with_autorefresh(getattr(list, name)))
 
 
-class _BasePlot(_Gnuplot, _ObservedList):
+class _BasePlot(Gnuplot, _ObservedList):
     def __init__(self, autorefresh=True, description=None, **kwargs):
         _ObservedList.__init__(self)
-        _Gnuplot.__init__(self, **kwargs)
+        Gnuplot.__init__(self, **kwargs)
         self.autorefresh = autorefresh
         self.description = description
 
-    __call__ = _ObservedList._with_autorefresh(_Gnuplot.__call__)
+    __call__ = _ObservedList._with_autorefresh(Gnuplot.__call__)
 
     def __repr__(self):
         classname = self.__class__.__name__
@@ -135,7 +135,7 @@ class _BasePlot(_Gnuplot, _ObservedList):
 
 
 class Plot(_BasePlot):
-    _plotmethod = _Gnuplot.plot
+    _plotmethod = Gnuplot.plot
     _plotcmd = "plot" # for save()
 
     def __init__(self, autorefresh=True, description=None, **kwargs):
@@ -276,12 +276,12 @@ class Plot(_BasePlot):
 
 
 class SPlot(Plot):
-    _plotmethod = _Gnuplot.splot
+    _plotmethod = Gnuplot.splot
     _plotcmd = "splot" # for save()
 
 
 class Multiplot(_BasePlot):
-    __call__ = _ObservedList._with_autorefresh(_Gnuplot.__call__)
+    __call__ = _ObservedList._with_autorefresh(Gnuplot.__call__)
 
     def clone(self, recursive=False, **kwargs):
         autorefresh = kwargs.get("autorefresh", self.autorefresh)

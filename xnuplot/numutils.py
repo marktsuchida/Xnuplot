@@ -18,7 +18,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-from . import numplot
+from . import _numplot
 from . import utils
 import numpy
 
@@ -30,10 +30,10 @@ def imshow(plot, image, axes=None, cliprect=None, adjust_ranges=True,
                          image_min, image_max, adjust_scale, adjust_layout)
         axes_spec = ("axes x%dy%d" % axes if axes is not None else None)
         title_spec = "title '%s'" % title if title is not None else "notitle"
-        plot2.append(numplot.array(image[..., numpy.newaxis],
-                                   " ".join(filter(None, [axes_spec,
-                                                          title_spec,
-                                                          "with image"]))))
+        plot2.append(_numplot.array(image[..., numpy.newaxis],
+                                    " ".join(filter(None, [axes_spec,
+                                                           title_spec,
+                                                           "with image"]))))
     if plot.autorefresh:
         plot.refresh()
 

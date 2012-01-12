@@ -18,8 +18,13 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 # IN THE SOFTWARE.
 
-from .gnuplot import closeall
-from .plot import Plot, SPlot, Multiplot, GridMultiplot, load
-__all__ = ["Plot", "SPlot", "Multiplot", "GridMultiplot", "load",
-           "closeall", "gnuplot", "numplot"]
+from ._gnuplot import RawGnuplot, Gnuplot, PlotData, closeall
+from ._plot import Multiplot, GridMultiplot, load
+
+try:
+    import numpy as _numpy
+except ImportError, e:
+    from ._plot import Plot, SPlot
+else:
+    from ._numplot import Plot, SPlot, array, record, matrix
 

@@ -301,41 +301,31 @@ class Multiplot(_BasePlot):
     def _multiplot_command(self):
         return "set multiplot"
 
-    def _save_origin_and_size(self):
+    def _get_origin_and_size(self):
         message = self("show origin").strip()
         remainder, ori_y = message.split(",")
         ori_x = remainder.strip().split()[-1]
-        self._saved_origin = tuple(int(o.strip()) for o in (ori_x, ori_y))
+        origin = tuple(float(o.strip()) for o in (ori_x, ori_y))
 
         message = self("show size").strip()
         message1, message2 = (m.strip() for m in message.split("\n"))
         remainder, siz_y = message1.split(",")
         siz_x = remainder.strip().split()[-1]
-        self._saved_size = tuple(int(s.strip()) for s in (siz_x, siz_y))
-        if "No attempt" in message2:
-            self._saved_size_ratio = None
-        else:
-            ratio_sign = 1
-            if "LOCKED" in message2:
-                ratio_sign = -1
-            ratio = int(message2.split(":")[-2].strip().split()[-1])
-            self._saved_size_ratio = ratio_sign * ratio
+        size = tuple(float(s.strip()) for s in (siz_x, siz_y))
 
-    def _restore_origin_and_size(self):
-        self("set origin %e, %e" % self._saved_origin)
-        if self._saved_size_ratio is None:
-            ratio_arg = "noratio"
-        else:
-            ratio_arg = "ratio %e" % self._saved_size_ratio
-        self("set size %s %e, %e" % ((ratio_arg,) + self._saved_size))
+        return (origin, size)
+
+    def _set_origin_and_size(self, origin_size):
+        self("set origin %e, %e" % origin_size[0])
+        self("set size %e, %e" % origin_size[1])
 
     def _perform_refresh(self):
         if not self.isalive():
             return
 
         if len(self):
-            self._save_origin_and_size()
-            self._saved_prompt = self.gp_prompt
+            saved_script = self.environment_script()
+            saved_prompt = self.gp_prompt
             self.gp_prompt = "multiplot> "
             self(self._multiplot_command())
             try:
@@ -346,12 +336,15 @@ class Multiplot(_BasePlot):
                         warnings.warn("skipping empty plot")
                         continue
 
-                    script = plot.environment_script().split("\n")
-                    script = [line for line in script if
-                              not line.startswith("set origin ") and
-                              not line.startswith("set size ")]
-                    self.source("\n".join(script))
+                    # For GridMultiplot to work, we need to override any
+                    # `set size' in plot.environment_script(). However, we
+                    # do not want to override the `set size ratio' setting.
+                    saved_origin_size = self._get_origin_and_size()
+                    self.source(plot.environment_script())
+                    self._set_origin_and_size(saved_origin_size)
 
+                    # But if the plot has size and/or origin, then that
+                    # overrides anything set by the multiplot.
                     if plot.size:
                         self("set size %e, %e" % plot.size)
                     if plot.origin:
@@ -360,9 +353,9 @@ class Multiplot(_BasePlot):
                     plotmethod = plot._plotmethod.im_func
                     plotmethod(self, *plot)
             finally:
-                self.gp_prompt = self._saved_prompt
+                self.gp_prompt = saved_prompt
                 self("unset multiplot")
-                self._restore_origin_and_size()
+                self.source(saved_script)
         else:
             self("clear")
 

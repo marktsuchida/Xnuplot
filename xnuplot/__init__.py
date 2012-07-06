@@ -19,7 +19,9 @@
 # IN THE SOFTWARE.
 
 from ._gnuplot import RawGnuplot, Gnuplot, PlotData, closeall
+from ._gnuplot import CommunicationError, GnuplotError
 from ._plot import Plot, SPlot, Multiplot, GridMultiplot, load
+from ._plot import FileFormatError
 
 try:
     import numpy as _numpy

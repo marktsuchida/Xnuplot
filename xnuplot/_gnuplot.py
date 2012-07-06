@@ -397,6 +397,7 @@ class Gnuplot(RawGnuplot):
                 data_dict[placeholder] = data
         result = self(cmd + " " + ", ".join(item_strings), **data_dict)
         # Result should be the empty string if successful.
+        # TODO: Deal with warnings.
         if len(result):
             # Remove Gnuplot's syntax error pointer.
             msg = result.strip().lstrip("^").strip()

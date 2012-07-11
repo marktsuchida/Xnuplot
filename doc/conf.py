@@ -41,7 +41,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Xnuplot'
-copyright = u'2011, Mark A. Tsuchida'
+copyright = u'2011-2012, Mark A. Tsuchida'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

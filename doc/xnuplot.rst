@@ -1,17 +1,16 @@
-Package xnuplot
-===============
+Core classes and functions
+==========================
 
 .. module:: xnuplot
 
-Modules:
+Also in the :mod:`xnuplot` module:
 
 .. toctree::
    :maxdepth: 1
 
-   gnuplot
    numplot
-   utils
-   numutils
+   gnuplot
+
 
 .. class:: Plot([autorefresh=True, persist=False, description=None, kwargs...])
 
@@ -29,13 +28,13 @@ Modules:
    :arg str description: an arbitrary description that is saved with the plot
 
    :arg kwargs: additional keyword arguments to the lower-level
-                :class:`xnuplot.gnuplot.Gnuplot` or
-                :class:`xnuplot.gnuplot.RawGnuplot` constructors.
+                :class:`xnuplot.Gnuplot` or :class:`xnuplot.RawGnuplot`
+                constructors.
 
    ``Plot`` inherits from ``list``. You can use the standard sequence methods
    (``insert()``, ``append()``, ``pop()``, and others), the ``del`` statement,
    and the indexing operator (``[]``) to add, remove, and replace plot items
-   (equivalent to the comma-separated arguments to Gnuplot's ``plot`` command).
+   (analogous to the comma-separated arguments to Gnuplot's ``plot`` command).
 
    If the :attr:`autorefresh` attribute is set to ``True``, simply changing the
    contents of the ``Plot`` container will automatically update the plot.
@@ -44,7 +43,7 @@ Modules:
 
    - a string (*e.g.* ``"sin(x)"``),
 
-   - an :class:`xnuplot.gnuplot.PlotData` instance, or
+   - an :class:`xnuplot.PlotData` instance, or
 
    - a tuple, (*data* [, *options* [, *mode*]]), which is used as the arguments
      to construct a ``PlotData`` object, where
@@ -57,7 +56,7 @@ Modules:
        ``using`` and ``with`` clauses), and
 
      * *mode* is one of ``"file"`` or ``"pipe"`` (default is ``"pipe"``; see
-       :meth:`xnuplot.gnuplot.Gnuplot.plot` for details).
+       :meth:`xnuplot.Gnuplot.plot` for details).
 
    For example,
    ::
@@ -114,7 +113,7 @@ Modules:
       :arg str command: the command to execute
 
       :arg dataitems: data to pass to Gnuplot (see
-                      :meth:`xnuplot.gnuplot.RawGnuplot.__call__`)
+                      :meth:`xnuplot.RawGnuplot.__call__`)
       :type dataitems: keyword arguments
 
       :returns: the output from the command
@@ -174,7 +173,7 @@ Modules:
       Perform curve fitting using Gnuplot's ``fit`` command.
 
       :arg data: a plot item specifying the data to fit to
-      :type data: tuple or :class:`xnuplot.gnuplot.PlotData`
+      :type data: tuple or :class:`xnuplot.PlotData`
       :arg str expr: the Gnuplot expression for the function to fit
       :arg via: the variables to float (and, optionally, their initial values):
                 *e.g.* ``"a, b"``, ``("a", "b")``, or ``{"a": 0.1, "b": 3.0}``
@@ -227,6 +226,12 @@ Modules:
 .. function:: closeall()
 
    Close all xnuplot plots and terminate all interfaced Gnuplot processes.
-   (This acts on :class:`xnuplot.gnuplot.Gnuplot` and
-   :class:`xnuplot.gnuplot.RawGnuplot` objects as well as :class:`Plot` and
-   :class:`SPlot` objects.)
+   (This acts on all :class:`xnuplot.Gnuplot` and :class:`xnuplot.RawGnuplot`
+   objects as well as :class:`Plot` and :class:`SPlot` objects.)
+
+
+.. exception:: FileFormatError
+
+   Raised by :func:`load` when the given file does not have the expected
+   format.
+

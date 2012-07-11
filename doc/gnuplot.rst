@@ -1,11 +1,9 @@
-Module xnuplot.gnuplot
-======================
-
-Low-level interface to Gnuplot.
+Low-level Gnuplot interface
+===========================
 
 (Documentation to be written.)
 
-.. module:: xnuplot.gnuplot
+.. module:: xnuplot
 
 .. class:: Gnuplot(...)
 

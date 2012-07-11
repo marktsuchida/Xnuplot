@@ -3,8 +3,6 @@ Module xnuplot.utils
 
 Experimental high-level functions.
 
-(Documentation to be written.)
-
 .. module:: xnuplot.utils
 
 .. function:: no_autorefresh(plot)

@@ -1,7 +1,9 @@
-Module xnuplot.numplot
-======================
+Passing NumPy arrays to Gnuplot
+===============================
 
-.. module:: xnuplot.numplot
+These functions are only defined if NumPy is installed on your system.
+
+.. module:: xnuplot
 
 
 .. function:: array(arr[, options=None, coord_options=None, using=None])
@@ -11,8 +13,7 @@ Module xnuplot.numplot
    the abscissae and other data point values).
 
    The returned object can be added to instances of :class:`xnuplot.Plot` or
-   :class:`xnuplot.SPlot` (or, equivalently, :class:`xnuplot.numplot.Plot` or
-   :class:`xnuplot.numplot.SPlot`).
+   :class:`xnuplot.SPlot`.
 
    :arg numpy.array arr: an array with at least two dimensions
 
@@ -42,8 +43,7 @@ Module xnuplot.numplot
    provided by the user).
 
    The returned object can be added to instances of :class:`xnuplot.Plot` or
-   :class:`xnuplot.SPlot` (or, equivalently, :class:`xnuplot.numplot.Plot` or
-   :class:`xnuplot.numplot.SPlot`).
+   :class:`xnuplot.SPlot`.
 
    :arg numpy.array arr: an array with at least two dimensions
 
@@ -66,8 +66,7 @@ Module xnuplot.numplot
    grid).
 
    The returned object can be added to instances of :class:`xnuplot.Plot` or
-   :class:`xnuplot.SPlot` (or, equivalently, :class:`xnuplot.numplot.Plot` or
-   :class:`xnuplot.numplot.SPlot`).
+   :class:`xnuplot.SPlot`.
 
    :arg numpy.array arr: a two-dimensional array containing the values for each
                          grid point
@@ -88,43 +87,4 @@ Module xnuplot.numplot
    
       Because Gnuplot does not read data of this type sequentially, the plot
       item is always passed as a temporary file (as opposed to a pipe).
-
-
-.. class:: Plot([autorefresh=True, persist=False, description=None, kwargs...])
-
-   An interface to a 2D Gnuplot plot that remembers (and allows
-   modification of) the current plot items.
-
-   This is a subclass of :class:`xnuplot.Plot` with equivalent functionality,
-   except that it addes the following convenience methods.
-
-   .. method:: append_array(arr[, options=None, coord_options=None, using=None])
-
-      Equivalent to ``append(array(arr, ...))``.
-
-   .. method:: insert_array(index, arr, ...)
-
-      Equivalent to ``insert(index, array(arr, ...))``.
-
-   .. method:: append_record(arr[, options=None, using=None])
-
-      Equivalent to ``append(record(arr, ...))``
-
-   .. method:: insert_record(index, arr, ...)
-
-      Equivalent to ``insert(index, record(arr, ...))``
-
-   .. method:: append_matrix(arr, xcoords, ycoords[, options=None])
-
-      Equivalent to ``append(matrix(arr, xcoords, ycoords, ...))``
-
-   .. method:: insert_matrix(index, arr, xcoords, ycoords, ...)
-
-      Equivalent to ``insert(index, matrix(arr, xcoords, ycoords, ...))``
-
-
-.. class:: SPlot([autorefresh=True, persist=False, description=None, kwargs...])
-
-   Like :class:`Plot`, but a subclass of :class:`xnuplot.SPlot` instead of
-   :class:`xnuplot.Plot`.
 

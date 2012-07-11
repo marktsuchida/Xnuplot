@@ -126,8 +126,16 @@ Prerequisites
   currently developed and tested on Mac OS X)
 
 
+Documentation
+-------------
+
+Please see here_.
+
+.. _here: http://marktsuchida.github.com/Xnuplot/
+
+
 License
 -------
 
-See the LICENSE file.
+Please see the LICENSE file.
 

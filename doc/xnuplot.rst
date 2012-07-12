@@ -142,6 +142,16 @@ Also in the :mod:`xnuplot` module:
          to perform curve fitting.
 
 
+   .. method:: clear()
+
+      Remove all plot items from the plot.
+
+
+   .. method:: keep(index_or_tuple_of_indices)
+
+      Remove all but the given plot items from the plot.
+
+
    .. method:: interact()
 
       Interact with the Gnuplot command line.

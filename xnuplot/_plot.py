@@ -134,6 +134,14 @@ class _BasePlot(Gnuplot, _ObservedList):
 
 
 class Plot(_BasePlot):
+    """A self-refreshing, editable, 2D plot.
+
+    The Plot class inherits both from the Gnuplot class and from list. It
+    behaves as a list of plot items (data or function) that can be modified.
+    By default, the `plot' command is automatically sent to Gnuplot each time
+    the plot is modified (see autorefresh).
+    """
+
     _plotmethod = Gnuplot.plot
     _plotcmd = "plot" # for save()
 
@@ -275,11 +283,20 @@ class Plot(_BasePlot):
 
 
 class SPlot(Plot):
+    """A self-refreshing, editable, 3D plot.
+
+    SPlot is identical to Plot except that it uses the `splot' command for
+    plotting, instead of the `plot' command. See the Plot class for details.
+    """
+
     _plotmethod = Gnuplot.splot
     _plotcmd = "splot" # for save()
 
 
 class Multiplot(_BasePlot):
+    """A self-refreshing, editable, multiplot.
+    """
+
     __call__ = _ObservedList._with_autorefresh(Gnuplot.__call__)
 
     def clone(self, recursive=False, **kwargs):
@@ -384,6 +401,9 @@ class Multiplot(_BasePlot):
 
 
 class GridMultiplot(Multiplot):
+    """A self-refreshing, editable, multiplot using a grid layout.
+    """
+
     def __init__(self, rows, cols, rowsfirst=True, upwards=False, title=None,
                  scale=None, offset=None, **kwargs):
         Multiplot.__init__(self, **kwargs)

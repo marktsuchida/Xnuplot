@@ -23,13 +23,16 @@ from ._plot import Plot as _Plot, SPlot as _SPlot
 import numpy
 
 def array(arr, options=None, coord_options=None, using=None):
+    """Return a binary array plot data item for a NumPy array."""
     return _array_or_record(arr, "array", options,
                             coord_options=coord_options, using=using)
 
 def record(arr, options=None, using=None):
+    """Return a binary record plot data item for a NumPy array."""
     return _array_or_record(arr, "record", options, using=using)
 
 def matrix(arr, xcoords, ycoords, options=None):
+    """Return a binary matrix plot data item for a NumPy array."""
     a = numpy.asarray(arr)
     if a.ndim != 2:
         raise ValueError("array for Gnuplot matrix must have ndim == 2")

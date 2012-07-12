@@ -41,7 +41,27 @@ class GnuplotError(RuntimeError):
     """Raised when Gnuplot (is known to have) responded with an error."""
 
 class RawGnuplot(object):
-    """Low-level manager for communication with a Gnuplot subprocess."""
+    """Low-level manager for communication with a Gnuplot subprocess.
+    
+    A RawGnuplot instance encapsulates a dedicated Gnuplot process and the
+    means for communication with it through a pseudoterminal. It can pass data
+    to Gnuplot using a temporary file or pipe, but is agnostic of the format of
+    commands and data (see __call__()).
+
+    Methods:
+    __init__() - constructor
+    __call__() - send command(s), optionally passing data, and receive output
+    interact() - allow user to interact directly with Gnuplot
+    close() - close the Gnuplot process (called automatically on destruction)
+    terminate() - terminate the Gnuplot process
+    isalive() - check whether the Gnuplot process is alive
+    pause() - send a `pause' command to Gnuplot (disregarding timeout)
+    quote() (static method) - quote a filename for use in a Gnuplot command
+
+    Attributes:
+    timeout - timeout for pty i/o (in seconds)
+    debug - if true, echo commands sent and output received
+    """
 
     gp_prompt = "gnuplot> "
     send_chunk_length = 512
@@ -319,6 +339,7 @@ class RawGnuplot(object):
         """
         if not self.isalive():
             raise CommunicationError("Gnuplot process has exited.")
+        # TODO Should probably check that (Python's) stdin is a terminal.
         # Debug mode (echoing) is a mere annoyance when in interactive mode.
         @contextlib.contextmanager
         def debug_turned_off():
@@ -367,7 +388,12 @@ class RawGnuplot(object):
         return quoted
 
 class Gnuplot(RawGnuplot):
-    """Manager for communication with a Gnuplot subprocess."""
+    """Manager for communication with a Gnuplot subprocess.
+    
+    The Gnuplot class inherits from RawGnuplot and adds methods (plot(),
+    splot(), replot(), fit(), script()) that simplify the passing of data when
+    issuing commands that require data to be read from files.
+    """
     def _datafilespec(self, data, name):
         if not isinstance(data, PlotData):
             data = PlotData(*data)
@@ -549,6 +575,7 @@ class _OutboundTempFile(object):
             self.path = None
 
 def closeall():
+    """Close all currently open RawGnuplot instances."""
     global _allplots
     for ref in _allplots:
         plot = ref()

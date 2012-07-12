@@ -57,9 +57,6 @@ Here's a basic example of plotting functions and data.
   >>> plot("set xrange [0.0:2.0]") # Send any Gnuplot command. Replotting is automatic by default.
   ''
   >>> plot.append(("0.0 0.0\n0.5 1.0\n1.0 0.5", "notitle with linespoints")) # Plot data.
-  >>> plot.save("test.xnuplot") # Save the plot to a file, with all its data and settings.
-  >>> del plot
-  >>> plot = xnuplot.load("test.xnuplot") # Open and display the saved plot.
   >>> plot # Plot objects are a subclass of list.
   <Plot ['sin(x)', <PlotData source=str options='notitle with linespoints' mode=pipe>]>
   >>> plot[0] = "cos(x)" # So you can replace plot items (functions or data).
@@ -76,9 +73,10 @@ Here's a basic example of plotting functions and data.
   'cos(x)'
   >>> plot
   <Plot [<PlotData source=str options='notitle with linespoints' mode=pipe>]>
+  >>> plot.close()
 
-If NumPy is installed on your system, the functions :func:`xnuplot.array`,
-:func:`xnuplot.record`, and :func:`xnuplot.matrix` become available.
+If NumPy is installed on your system, the functions :func:`~xnuplot.array`,
+:func:`~xnuplot.record`, and :func:`~xnuplot.matrix` become available.
 These are used to generate appropriate Gnuplot binary data descriptors, and
 they correspond to Gnuplot's ``binary array``, ``binary record``, and ``binary
 matrix`` keywords, respectively.
@@ -89,16 +87,15 @@ matrix`` keywords, respectively.
    the ``array`` and ``record`` keywords) can be a bit confusing at first. I
    intend to write a general introduction to this topic at some point.
 
-When plot items are created by wrapping NumPy arrays with these functions, the
-array data is piped to Gnuplot in its binary form, without the overhead of
-converting it into ascii. In most cases, Xnuplot automatically takes care of
-generating the right keywords to tell Gnuplot the size and data type of your
-array.
+When plot items are created by wrapping NumPy arrays with one of these
+functions, the array is sent to Gnuplot as binary data. In most cases, Xnuplot
+automatically takes care of generating the right keywords to tell Gnuplot the
+size and data type of your array.
 
 ::
 
-  import numpy
   import xnuplot
+  import numpy
   x = numpy.linspace(0, 5.0 * numpy.pi, 200)
   y1 = numpy.sin(x)
   y2 = numpy.cos(x)
@@ -107,13 +104,42 @@ array.
   plot.append(xnuplot.record(data, using=(0, 1), options="notitle with lines"))
   plot.append(xnuplot.record(data, using=(0, 2), options="notitle with lines"))
 
-.. TODO Introduce clone and multiplot facilities here.
+One very handy feature of Xnuplot is the ability to save plots, together with
+the plotted data. You can load the saved plot later and make changes::
 
-Last but not least, Xnuplot comes with a simple command line script,
-:program:`xnuplot`, to display saved plots. It allows you to edit the plot
-settings (though not the data) from the Gnuplot command line, and is handy for
-minor tweaks like modifying the plot title as well as for plotting to an image
-or postscript file. Type ``xnuplot --help`` to get a list of command line
+  plot.save("sincos.xnuplot")
+  plot.close()
+  del plot, data
+  plot = xnuplot.load("sincos.xnuplot")
+  plot("unset key")
+  plot("set title 'sin(x) and cos(x)')
+
+You can also clone plots, allowing you to use one plot as a template for
+another::
+
+  p1 = xnuplot.Plot()
+  p1.append("sin(x)")
+  p1("set xlabel 'x'")
+  p1("set ylabel 'y'")
+  p1("set title 'y = sin(x)'")
+  p2 = p1.clone() # Make a second plot with the same title, labels, and content.
+  p2[0] = "cos(x)"
+  p2("set title 'y = cos(x)'")
+
+Xnuplot also makes it easy to use Gnuplot's multiplot functionality. A
+multiplot in Xnuplot behaves as a list containing subplots, each of which are
+active :class:`~xnuplot.Plot` instances::
+
+  mp = xnuplot.GridMultiplot(1, 2) # One row and two columns.
+  mp.extend([p1, p2])
+  mp.title = "Trigonometric functions"
+
+Finally, Xnuplot comes with a simple command line script, :program:`xnuplot`,
+to display saved plots. In addition to providing a quick way to view saved
+plots, it allows you to edit the plot settings (though not the data) from the
+Gnuplot command line, and is handy for minor tweaks like modifying the plot
+title and labels. It can also be used to quickly generate image or
+postscript/PDF output. Type ``xnuplot --help`` to get a list of command line
 options.
 
 
@@ -123,8 +149,8 @@ Prerequisites
 - Python 2.6 or 2.7 (not Python 3)
 - Gnuplot 4.4 or above
 - Pexpect (tested with version 2.3)
-- A UNIX operating system on which Pexpected works properly (Xnuplot is
-  currently developed and tested on Mac OS X)
+- A UNIX operating system on which Pexpect works properly (Xnuplot is currently
+  developed and tested on Mac OS X)
 
 
 Documentation

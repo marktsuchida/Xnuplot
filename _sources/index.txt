@@ -1,12 +1,13 @@
 Xnuplot
 =======
 
-**Xnuplot** ("ex-new-plot") is a Python package for driving the interactive
+Xnuplot_ ("ex-new-plot") is a Python package for driving the interactive
 plotting program Gnuplot_. It uses Noah Spurrier's Pexpect_ module to
 communicate with Gnuplot (hence the name *Xnuplot*), and can efficiently pipe
 text as well as binary data, including data contained in NumPy_ arrays, to
 Gnuplot.
 
+.. _Xnuplot: https://github.com/marktsuchida/Xnuplot
 .. _Gnuplot: http://www.gnuplot.info/
 .. _Pexpect: http://www.noah.org/wiki/pexpect
 .. _NumPy: http://numpy.scipy.org/

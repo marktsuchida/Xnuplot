@@ -106,8 +106,7 @@ Gnuplot quits (<em>i.e.</em> after the <tt class="docutils literal"><span class=
 deleted)</li>
 <li><strong>description</strong> (<em>str</em>) &#8211; an arbitrary description that is saved with the plot</li>
 <li><strong>kwargs</strong> &#8211; additional keyword arguments to the lower-level
-<a class="reference internal" href="gnuplot.html#xnuplot.Gnuplot" title="xnuplot.Gnuplot"><tt class="xref py py-class docutils literal"><span class="pre">xnuplot.Gnuplot</span></tt></a> or <a class="reference internal" href="gnuplot.html#xnuplot.RawGnuplot" title="xnuplot.RawGnuplot"><tt class="xref py py-class docutils literal"><span class="pre">xnuplot.RawGnuplot</span></tt></a>
-constructors.</li>
+<a class="reference internal" href="gnuplot.html#xnuplot.Gnuplot" title="xnuplot.Gnuplot"><tt class="xref py py-class docutils literal"><span class="pre">Gnuplot</span></tt></a> or <a class="reference internal" href="gnuplot.html#xnuplot.RawGnuplot" title="xnuplot.RawGnuplot"><tt class="xref py py-class docutils literal"><span class="pre">RawGnuplot</span></tt></a> constructors.</li>
 </ul>
 </td>
 </tr>
@@ -122,7 +121,7 @@ contents of the <tt class="docutils literal"><span class="pre">Plot</span></tt> 
 <p>Plot items can be</p>
 <ul class="simple">
 <li>a string (<em>e.g.</em> <tt class="docutils literal"><span class="pre">&quot;sin(x)&quot;</span></tt>),</li>
-<li>an <a class="reference internal" href="gnuplot.html#xnuplot.PlotData" title="xnuplot.PlotData"><tt class="xref py py-class docutils literal"><span class="pre">xnuplot.PlotData</span></tt></a> instance, or</li>
+<li>an <a class="reference internal" href="gnuplot.html#xnuplot.PlotData" title="xnuplot.PlotData"><tt class="xref py py-class docutils literal"><span class="pre">PlotData</span></tt></a> instance, or</li>
 <li>a tuple, (<em>data</em> [, <em>options</em> [, <em>mode</em>]]), which is used as the arguments
 to construct a <tt class="docutils literal"><span class="pre">PlotData</span></tt> object, where<ul>
 <li><em>data</em> can either be a string in a format that Gnuplot understands,
@@ -131,7 +130,7 @@ by Gnuplot) through the buffer protocol,</li>
 <li><em>options</em> is a string containing Gnuplot plot options (<em>e.g.</em>
 <tt class="docutils literal"><span class="pre">using</span></tt> and <tt class="docutils literal"><span class="pre">with</span></tt> clauses), and</li>
 <li><em>mode</em> is one of <tt class="docutils literal"><span class="pre">&quot;file&quot;</span></tt> or <tt class="docutils literal"><span class="pre">&quot;pipe&quot;</span></tt> (default is <tt class="docutils literal"><span class="pre">&quot;pipe&quot;</span></tt>; see
-<tt class="xref py py-meth docutils literal"><span class="pre">xnuplot.Gnuplot.plot()</span></tt> for details).</li>
+<tt class="xref py py-meth docutils literal"><span class="pre">Gnuplot.plot()</span></tt> for details).</li>
 </ul>
 </li>
 </ul>
@@ -176,6 +175,20 @@ every time the plot is modified.</p>
 together with the plot by the <a class="reference internal" href="#xnuplot.Plot.save" title="xnuplot.Plot.save"><tt class="xref py py-meth docutils literal"><span class="pre">save()</span></tt></a> method.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="xnuplot.Plot.size">
+<tt class="descname">size</tt><a class="headerlink" href="#xnuplot.Plot.size" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used when part of a <a class="reference internal" href="#xnuplot.Multiplot" title="xnuplot.Multiplot"><tt class="xref py py-class docutils literal"><span class="pre">Multiplot</span></tt></a> to set the size of this plot. A
+pair of scale factors (x, y).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xnuplot.Plot.origin">
+<tt class="descname">origin</tt><a class="headerlink" href="#xnuplot.Plot.origin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used when part of a <a class="reference internal" href="#xnuplot.Multiplot" title="xnuplot.Multiplot"><tt class="xref py py-class docutils literal"><span class="pre">Multiplot</span></tt></a> to set the origin of this plot. A
+pair of screen coordinates (x, y).</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="xnuplot.Plot.__call__">
 <tt class="descname">__call__</tt><big>(</big><em>command</em><span class="optional">[</span>, <em>dataitems...</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#xnuplot.Plot.__call__" title="Permalink to this definition">¶</a></dt>
@@ -186,8 +199,7 @@ together with the plot by the <a class="reference internal" href="#xnuplot.Plot.
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>command</strong> (<em>str</em>) &#8211; the command to execute</li>
-<li><strong>dataitems</strong> (<em>keyword arguments</em>) &#8211; data to pass to Gnuplot (see
-<tt class="xref py py-meth docutils literal"><span class="pre">xnuplot.RawGnuplot.__call__()</span></tt>)</li>
+<li><strong>dataitems</strong> (<em>keyword arguments</em>) &#8211; data to pass to Gnuplot (see <tt class="xref py py-meth docutils literal"><span class="pre">RawGnuplot.__call__()</span></tt>)</li>
 </ul>
 </td>
 </tr>
@@ -246,6 +258,13 @@ command line tool.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="xnuplot.Plot.clone">
+<tt class="descname">clone</tt><big>(</big><big>)</big><a class="headerlink" href="#xnuplot.Plot.clone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a duplicate Plot object, sharing the same plot items but with its
+own Gnuplot process. Gnuplot settings and variables are preserved.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="xnuplot.Plot.close">
 <tt class="descname">close</tt><big>(</big><big>)</big><a class="headerlink" href="#xnuplot.Plot.close" title="Permalink to this definition">¶</a></dt>
 <dd><p>Terminate the attached Gnuplot process. This is called automatically when
@@ -261,7 +280,7 @@ the <tt class="docutils literal"><span class="pre">Plot</span></tt> object is de
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>data</strong> (tuple or <a class="reference internal" href="gnuplot.html#xnuplot.PlotData" title="xnuplot.PlotData"><tt class="xref py py-class docutils literal"><span class="pre">xnuplot.PlotData</span></tt></a>) &#8211; a plot item specifying the data to fit to</li>
+<li><strong>data</strong> (tuple or <a class="reference internal" href="gnuplot.html#xnuplot.PlotData" title="xnuplot.PlotData"><tt class="xref py py-class docutils literal"><span class="pre">PlotData</span></tt></a>) &#8211; a plot item specifying the data to fit to</li>
 <li><strong>expr</strong> (<em>str</em>) &#8211; the Gnuplot expression for the function to fit</li>
 <li><strong>via</strong> (<em>str, tuple, or dict</em>) &#8211; the variables to float (and, optionally, their initial values):
 <em>e.g.</em> <tt class="docutils literal"><span class="pre">&quot;a,</span> <span class="pre">b&quot;</span></tt>, <tt class="docutils literal"><span class="pre">(&quot;a&quot;,</span> <span class="pre">&quot;b&quot;)</span></tt>, or <tt class="docutils literal"><span class="pre">{&quot;a&quot;:</span> <span class="pre">0.1,</span> <span class="pre">&quot;b&quot;:</span> <span class="pre">3.0}</span></tt></li>
@@ -298,6 +317,108 @@ each parameter, and</li>
 plotted using Gnuplot&#8217;s <tt class="docutils literal"><span class="pre">splot</span></tt> command instead of the <tt class="docutils literal"><span class="pre">plot</span></tt> command.</p>
 </dd></dl>
 
+<dl class="class">
+<dt id="xnuplot.Multiplot">
+<em class="property">class </em><tt class="descclassname">xnuplot.</tt><tt class="descname">Multiplot</tt><big>(</big><span class="optional">[</span><em>autorefresh=True</em>, <em>persist=False</em>, <em>description=None</em>, <em>kwargs...</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#xnuplot.Multiplot" title="Permalink to this definition">¶</a></dt>
+<dd><p>An encapsulation of Gnuplot&#8217;s multiplot facility (see <tt class="docutils literal"><span class="pre">set</span> <span class="pre">multiplot</span></tt> in
+the Gnuplot manual).</p>
+<p>The constructor parameters are the same as with the <a class="reference internal" href="#xnuplot.Plot" title="xnuplot.Plot"><tt class="xref py py-class docutils literal"><span class="pre">Plot</span></tt></a> and
+<a class="reference internal" href="#xnuplot.SPlot" title="xnuplot.SPlot"><tt class="xref py py-class docutils literal"><span class="pre">SPlot</span></tt></a> classes, with whom <tt class="docutils literal"><span class="pre">Multiplot</span></tt> shares the following
+attributes and methods: <a class="reference internal" href="#xnuplot.Plot.autorefresh" title="xnuplot.Plot.autorefresh"><tt class="xref py py-attr docutils literal"><span class="pre">autorefresh</span></tt></a>,
+<a class="reference internal" href="#xnuplot.Plot.description" title="xnuplot.Plot.description"><tt class="xref py py-attr docutils literal"><span class="pre">description</span></tt></a>, <a class="reference internal" href="#xnuplot.Plot.__call__" title="xnuplot.Plot.__call__"><tt class="xref py py-meth docutils literal"><span class="pre">__call__()</span></tt></a>, <a class="reference internal" href="#xnuplot.Plot.interact" title="xnuplot.Plot.interact"><tt class="xref py py-meth docutils literal"><span class="pre">interact()</span></tt></a>,
+<a class="reference internal" href="#xnuplot.Plot.refresh" title="xnuplot.Plot.refresh"><tt class="xref py py-meth docutils literal"><span class="pre">refresh()</span></tt></a>, <a class="reference internal" href="#xnuplot.Plot.save" title="xnuplot.Plot.save"><tt class="xref py py-meth docutils literal"><span class="pre">save()</span></tt></a>, <a class="reference internal" href="#xnuplot.Multiplot.clone" title="xnuplot.Multiplot.clone"><tt class="xref py py-meth docutils literal"><span class="pre">clone()</span></tt></a> (see below), and
+<a class="reference internal" href="#xnuplot.Plot.close" title="xnuplot.Plot.close"><tt class="xref py py-meth docutils literal"><span class="pre">close()</span></tt></a>.</p>
+<p><tt class="docutils literal"><span class="pre">Multiplot</span></tt> also inherits from <tt class="docutils literal"><span class="pre">list</span></tt>, but as items holds whole
+<a class="reference internal" href="#xnuplot.Plot" title="xnuplot.Plot"><tt class="xref py py-class docutils literal"><span class="pre">Plot</span></tt></a> and <a class="reference internal" href="#xnuplot.SPlot" title="xnuplot.SPlot"><tt class="xref py py-class docutils literal"><span class="pre">SPlot</span></tt></a> instances (as subplots), rather than plot
+items. When the subplots are modified, the change is reflected in the
+multiplot (if <tt class="docutils literal"><span class="pre">autorefresh</span></tt> is set to True on the multiplot).</p>
+<p>The position and scaling of the subplots are determined by the subplots&#8217;
+<a class="reference internal" href="#xnuplot.Plot.origin" title="xnuplot.Plot.origin"><tt class="xref py py-attr docutils literal"><span class="pre">origin</span></tt></a> and <a class="reference internal" href="#xnuplot.Plot.size" title="xnuplot.Plot.size"><tt class="xref py py-attr docutils literal"><span class="pre">size</span></tt></a> attributes.</p>
+<p><tt class="xref py py-meth docutils literal"><span class="pre">Multiplot.save()</span></tt> will save the multiplot together with all of its
+subplots.</p>
+<dl class="method">
+<dt id="xnuplot.Multiplot.clone">
+<tt class="descname">clone</tt><big>(</big><span class="optional">[</span><em>recursive=False</em>, <em>kwargs...</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#xnuplot.Multiplot.clone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clone the multiplot. If recursive is True, each subplot is cloned and
+placed in the new multiplot; otherwise, the cloned multiplot shares all
+of its subplots with the original.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="xnuplot.GridMultiplot">
+<em class="property">class </em><tt class="descclassname">xnuplot.</tt><tt class="descname">GridMultiplot</tt><big>(</big><em>rows</em>, <em>cols</em><span class="optional">[</span>, <em>rowsfirst=True</em>, <em>upwards=False</em>, <em>title=None</em>, <em>scale=None</em>, <em>offset=None</em>, <em>kwargs...</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#xnuplot.GridMultiplot" title="Permalink to this definition">¶</a></dt>
+<dd><p>An encapsulation of Gnuplot&#8217;s multiplot facility using a grid layout.</p>
+<p>This is a version of <a class="reference internal" href="#xnuplot.Multiplot" title="xnuplot.Multiplot"><tt class="xref py py-class docutils literal"><span class="pre">Multiplot</span></tt></a> that uses Gnuplot&#8217;s <tt class="docutils literal"><span class="pre">set</span> <span class="pre">multiplot</span>
+<span class="pre">layout</span></tt> option.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>rows</strong> (<em>int</em>) &#8211; number of rows in the multiplot grid</li>
+<li><strong>cols</strong> (<em>int</em>) &#8211; number of columns in the multiplot grid</li>
+<li><strong>rowsfirst</strong> (<em>bool</em>) &#8211; if true, fill the grid with subplots in row-first order</li>
+<li><strong>upwards</strong> (<em>bool</em>) &#8211; if true, start at the bottom row (or the bottom cell of
+the first column); else, start at the top row</li>
+<li><strong>title</strong> (<em>str</em>) &#8211; add a title for the multiplot</li>
+<li><strong>scale</strong> (<em>tuple</em>) &#8211; scale factors (xscale, yscale) applied to each subplot</li>
+<li><strong>offset</strong> (<em>tuple</em>) &#8211; offset (in screen coordinates) applied to each subplot</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p><tt class="docutils literal"><span class="pre">GridMultiplot</span></tt> shares all methods with <a class="reference internal" href="#xnuplot.Multiplot" title="xnuplot.Multiplot"><tt class="xref py py-class docutils literal"><span class="pre">Multiplot</span></tt></a>, but has
+additional attributes corresponding to the constructor arguments.</p>
+<dl class="attribute">
+<dt id="xnuplot.GridMultiplot.rows">
+<tt class="descname">rows</tt><a class="headerlink" href="#xnuplot.GridMultiplot.rows" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of rows in the multiplot grid.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xnuplot.GridMultiplot.cols">
+<tt class="descname">cols</tt><a class="headerlink" href="#xnuplot.GridMultiplot.cols" title="Permalink to this definition">¶</a></dt>
+<dd><p>The number of columns in the multiplot grid.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xnuplot.GridMultiplot.rowsfirst">
+<tt class="descname">rowsfirst</tt><a class="headerlink" href="#xnuplot.GridMultiplot.rowsfirst" title="Permalink to this definition">¶</a></dt>
+<dd><p>If true, the grid will be filled with subplots in row-first order; else,
+in column-first order.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xnuplot.GridMultiplot.upwards">
+<tt class="descname">upwards</tt><a class="headerlink" href="#xnuplot.GridMultiplot.upwards" title="Permalink to this definition">¶</a></dt>
+<dd><p>If true, the grid will be filled from bottom to top, starting with the
+bottom row (or the bottom cell of the first column, if <a class="reference internal" href="#xnuplot.GridMultiplot.rowsfirst" title="xnuplot.GridMultiplot.rowsfirst"><tt class="xref py py-attr docutils literal"><span class="pre">rowsfirst</span></tt></a>
+is <tt class="xref docutils literal"><span class="pre">True</span></tt>); else, the grid will be filled from top to bottom.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xnuplot.GridMultiplot.title">
+<tt class="descname">title</tt><a class="headerlink" href="#xnuplot.GridMultiplot.title" title="Permalink to this definition">¶</a></dt>
+<dd><p>The title for the multiplot.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xnuplot.GridMultiplot.scale">
+<tt class="descname">scale</tt><a class="headerlink" href="#xnuplot.GridMultiplot.scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>A pair of scale factors (x, y) that are applied to each subplot.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="xnuplot.GridMultiplot.offset">
+<tt class="descname">offset</tt><a class="headerlink" href="#xnuplot.GridMultiplot.offset" title="Permalink to this definition">¶</a></dt>
+<dd><p>A pair of offsets (x, y) that are applied to each subplot.</p>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="function">
 <dt id="xnuplot.load">
 <tt class="descclassname">xnuplot.</tt><tt class="descname">load</tt><big>(</big><em>file</em><span class="optional">[</span>, <em>autorefresh=True</em>, <em>persist=False</em>, <em>class_=None</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#xnuplot.load" title="Permalink to this definition">¶</a></dt>
@@ -315,8 +436,9 @@ modified</li>
 Gnuplot quits (<em>i.e.</em> after the <a class="reference internal" href="#xnuplot.Plot" title="xnuplot.Plot"><tt class="xref py py-class docutils literal"><span class="pre">Plot</span></tt></a> object is
 deleted)</li>
 <li><strong>class_</strong> (<em>class</em>) &#8211; the class to use for the returned plot object (defaults
-to <a class="reference internal" href="#xnuplot.Plot" title="xnuplot.Plot"><tt class="xref py py-class docutils literal"><span class="pre">xnuplot.Plot</span></tt></a> or <a class="reference internal" href="#xnuplot.SPlot" title="xnuplot.SPlot"><tt class="xref py py-class docutils literal"><span class="pre">xnuplot.SPlot</span></tt></a>,
-depending on the plot contained in <em>file</em>)</li>
+to <a class="reference internal" href="#xnuplot.Plot" title="xnuplot.Plot"><tt class="xref py py-class docutils literal"><span class="pre">Plot</span></tt></a>, <a class="reference internal" href="#xnuplot.SPlot" title="xnuplot.SPlot"><tt class="xref py py-class docutils literal"><span class="pre">SPlot</span></tt></a>, <a class="reference internal" href="#xnuplot.Multiplot" title="xnuplot.Multiplot"><tt class="xref py py-class docutils literal"><span class="pre">Multiplot</span></tt></a>, or
+<a class="reference internal" href="#xnuplot.GridMultiplot" title="xnuplot.GridMultiplot"><tt class="xref py py-class docutils literal"><span class="pre">GridMultiplot</span></tt></a>, depending on the contents of
+<em>file</em>)</li>
 </ul>
 </td>
 </tr>
@@ -329,9 +451,7 @@ plot as a <tt class="xref py py-class docutils literal"><span class="pre">numplo
 <dl class="function">
 <dt id="xnuplot.closeall">
 <tt class="descclassname">xnuplot.</tt><tt class="descname">closeall</tt><big>(</big><big>)</big><a class="headerlink" href="#xnuplot.closeall" title="Permalink to this definition">¶</a></dt>
-<dd><p>Close all xnuplot plots and terminate all interfaced Gnuplot processes.
-(This acts on all <a class="reference internal" href="gnuplot.html#xnuplot.Gnuplot" title="xnuplot.Gnuplot"><tt class="xref py py-class docutils literal"><span class="pre">xnuplot.Gnuplot</span></tt></a> and <a class="reference internal" href="gnuplot.html#xnuplot.RawGnuplot" title="xnuplot.RawGnuplot"><tt class="xref py py-class docutils literal"><span class="pre">xnuplot.RawGnuplot</span></tt></a>
-objects as well as <a class="reference internal" href="#xnuplot.Plot" title="xnuplot.Plot"><tt class="xref py py-class docutils literal"><span class="pre">Plot</span></tt></a> and <a class="reference internal" href="#xnuplot.SPlot" title="xnuplot.SPlot"><tt class="xref py py-class docutils literal"><span class="pre">SPlot</span></tt></a> objects.)</p>
+<dd><p>Close all xnuplot plots and terminate all interfaced Gnuplot processes.</p>
 </dd></dl>
 
 <dl class="exception">

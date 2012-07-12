@@ -28,8 +28,7 @@ Also in the :mod:`xnuplot` module:
    :arg str description: an arbitrary description that is saved with the plot
 
    :arg kwargs: additional keyword arguments to the lower-level
-                :class:`xnuplot.Gnuplot` or :class:`xnuplot.RawGnuplot`
-                constructors.
+                :class:`Gnuplot` or :class:`RawGnuplot` constructors.
 
    ``Plot`` inherits from ``list``. You can use the standard sequence methods
    (``insert()``, ``append()``, ``pop()``, and others), the ``del`` statement,
@@ -43,7 +42,7 @@ Also in the :mod:`xnuplot` module:
 
    - a string (*e.g.* ``"sin(x)"``),
 
-   - an :class:`xnuplot.PlotData` instance, or
+   - an :class:`PlotData` instance, or
 
    - a tuple, (*data* [, *options* [, *mode*]]), which is used as the arguments
      to construct a ``PlotData`` object, where
@@ -56,7 +55,7 @@ Also in the :mod:`xnuplot` module:
        ``using`` and ``with`` clauses), and
 
      * *mode* is one of ``"file"`` or ``"pipe"`` (default is ``"pipe"``; see
-       :meth:`xnuplot.Gnuplot.plot` for details).
+       :meth:`Gnuplot.plot` for details).
 
    For example,
    ::
@@ -106,14 +105,25 @@ Also in the :mod:`xnuplot` module:
       together with the plot by the :meth:`save` method.
 
 
+   .. attribute:: size
+
+      Used when part of a :class:`Multiplot` to set the size of this plot. A
+      pair of scale factors (x, y).
+
+
+   .. attribute:: origin
+
+      Used when part of a :class:`Multiplot` to set the origin of this plot. A
+      pair of screen coordinates (x, y).
+
+
    .. method:: __call__(command[, dataitems...])
 
       Execute a Gnuplot command.
 
       :arg str command: the command to execute
 
-      :arg dataitems: data to pass to Gnuplot (see
-                      :meth:`xnuplot.RawGnuplot.__call__`)
+      :arg dataitems: data to pass to Gnuplot (see :meth:`RawGnuplot.__call__`)
       :type dataitems: keyword arguments
 
       :returns: the output from the command
@@ -162,6 +172,12 @@ Also in the :mod:`xnuplot` module:
       command line tool.
 
 
+   .. method:: clone()
+
+      Create a duplicate Plot object, sharing the same plot items but with its
+      own Gnuplot process. Gnuplot settings and variables are preserved.
+
+
    .. method:: close()
 
       Terminate the attached Gnuplot process. This is called automatically when
@@ -173,7 +189,7 @@ Also in the :mod:`xnuplot` module:
       Perform curve fitting using Gnuplot's ``fit`` command.
 
       :arg data: a plot item specifying the data to fit to
-      :type data: tuple or :class:`xnuplot.PlotData`
+      :type data: tuple or :class:`PlotData`
       :arg str expr: the Gnuplot expression for the function to fit
       :arg via: the variables to float (and, optionally, their initial values):
                 *e.g.* ``"a, b"``, ``("a", "b")``, or ``{"a": 0.1, "b": 3.0}``
@@ -201,6 +217,93 @@ Also in the :mod:`xnuplot` module:
    plotted using Gnuplot's ``splot`` command instead of the ``plot`` command.
 
 
+.. class:: Multiplot([autorefresh=True, persist=False, description=None, kwargs...])
+
+   An encapsulation of Gnuplot's multiplot facility (see ``set multiplot`` in
+   the Gnuplot manual).
+
+   The constructor parameters are the same as with the :class:`Plot` and
+   :class:`SPlot` classes, with whom ``Multiplot`` shares the following
+   attributes and methods: :attr:`~Plot.autorefresh`,
+   :attr:`~Plot.description`, :meth:`~Plot.__call__`, :meth:`~Plot.interact`,
+   :meth:`~Plot.refresh`, :meth:`~Plot.save`, :meth:`clone` (see below), and
+   :meth:`~Plot.close`.
+
+   ``Multiplot`` also inherits from ``list``, but as items holds whole
+   :class:`Plot` and :class:`SPlot` instances (as subplots), rather than plot
+   items. When the subplots are modified, the change is reflected in the
+   multiplot (if ``autorefresh`` is set to True on the multiplot).
+
+   The position and scaling of the subplots are determined by the subplots'
+   :attr:`~Plot.origin` and :attr:`~Plot.size` attributes.
+
+   :meth:`Multiplot.save` will save the multiplot together with all of its
+   subplots.
+
+   .. method:: clone([recursive=False, kwargs...])
+
+      Clone the multiplot. If recursive is True, each subplot is cloned and
+      placed in the new multiplot; otherwise, the cloned multiplot shares all
+      of its subplots with the original.
+
+
+.. class:: GridMultiplot(rows, cols[, rowsfirst=True, upwards=False, title=None, scale=None, offset=None, kwargs...])
+
+   An encapsulation of Gnuplot's multiplot facility using a grid layout.
+
+   This is a version of :class:`Multiplot` that uses Gnuplot's ``set multiplot
+   layout`` option.
+
+   :arg int rows: number of rows in the multiplot grid
+
+   :arg int cols: number of columns in the multiplot grid
+
+   :arg bool rowsfirst: if true, fill the grid with subplots in row-first order
+
+   :arg bool upwards: if true, start at the bottom row (or the bottom cell of
+                      the first column); else, start at the top row
+
+   :arg str title: add a title for the multiplot
+
+   :arg tuple scale: scale factors (xscale, yscale) applied to each subplot
+
+   :arg tuple offset: offset (in screen coordinates) applied to each subplot
+
+   ``GridMultiplot`` shares all methods with :class:`Multiplot`, but has
+   additional attributes corresponding to the constructor arguments.
+
+   .. attribute:: rows
+
+      The number of rows in the multiplot grid.
+
+   .. attribute:: cols
+
+      The number of columns in the multiplot grid.
+
+   .. attribute:: rowsfirst
+
+      If true, the grid will be filled with subplots in row-first order; else,
+      in column-first order.
+
+   .. attribute:: upwards
+
+      If true, the grid will be filled from bottom to top, starting with the
+      bottom row (or the bottom cell of the first column, if :attr:`rowsfirst`
+      is ``True``); else, the grid will be filled from top to bottom.
+
+   .. attribute:: title
+
+      The title for the multiplot.
+
+   .. attribute:: scale
+
+      A pair of scale factors (x, y) that are applied to each subplot.
+
+   .. attribute:: offset
+
+      A pair of offsets (x, y) that are applied to each subplot.
+
+
 .. function:: load(file[, autorefresh=True, persist=False, class_=None])
 
    Load a plot archived by the :meth:`Plot.save` or :meth:`SPlot.save` method.
@@ -217,8 +320,9 @@ Also in the :mod:`xnuplot` module:
                       deleted)
 
    :arg class class\_: the class to use for the returned plot object (defaults
-                      to :class:`xnuplot.Plot` or :class:`xnuplot.SPlot`,
-                      depending on the plot contained in *file*)
+                       to :class:`Plot`, :class:`SPlot`, :class:`Multiplot`, or
+                       :class:`GridMultiplot`, depending on the contents of
+                       *file*)
 
    The *class_* argument is useful if, for example, you want to load a saved
    plot as a :class:`numplot.Plot` object.
@@ -226,8 +330,6 @@ Also in the :mod:`xnuplot` module:
 .. function:: closeall()
 
    Close all xnuplot plots and terminate all interfaced Gnuplot processes.
-   (This acts on all :class:`xnuplot.Gnuplot` and :class:`xnuplot.RawGnuplot`
-   objects as well as :class:`Plot` and :class:`SPlot` objects.)
 
 
 .. exception:: FileFormatError

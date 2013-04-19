@@ -429,7 +429,7 @@ class Gnuplot(RawGnuplot):
             # XXX Our handling of Gnuplot warnings is not perfect.
             warnings_only = True
             for line in msg.splitlines():
-                if re.match(r"[Ww]arning: ", line):
+                if re.match(r"\s*[Ww]arning: ", line):
                     warnings.warn(line.strip())
                 elif line.strip():
                     warnings_only = False

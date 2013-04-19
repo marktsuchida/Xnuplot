@@ -423,11 +423,18 @@ class Gnuplot(RawGnuplot):
                 data_dict[placeholder] = data
         result = self(cmd + " " + ", ".join(item_strings), **data_dict)
         # Result should be the empty string if successful.
-        # TODO: Deal with warnings.
         if len(result):
             # Remove Gnuplot's syntax error pointer.
             msg = result.strip().lstrip("^").strip()
-            raise GnuplotError("`{0}' returned error".format(cmd), msg)
+            # XXX Our handling of Gnuplot warnings is not perfect.
+            warnings_only = True
+            for line in msg.splitlines():
+                if re.match(r"[Ww]arning: ", line):
+                    warnings.warn(line.strip())
+                elif line.strip():
+                    warnings_only = False
+            if not warnings_only:
+                raise GnuplotError("`{0}' returned error".format(cmd), msg)
 
     def plot(self, *items):
         """Issue a `plot' command with the given items.
